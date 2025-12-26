@@ -1,16 +1,30 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Safe environment variable access for browser/preview environments
+const getEnv = (key: string): string => {
+  try {
+    // Check if process exists and has the key
+    if (typeof process !== 'undefined' && process.env && process.env[key]) {
+      return process.env[key] as string;
+    }
+    // Fallback for Vite or other environments if needed
+    // @ts-ignore
+    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key]) {
+      // @ts-ignore
+      return import.meta.env[key] as string;
+    }
+  } catch (e) {
+    console.warn(`Could not access environment variable: ${key}`);
+  }
+  return '';
+};
 
-// If keys aren't provided, this will still initialize but requests will fail gracefully
-// Use this client to fetch your products and handle orders.
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabaseUrl = getEnv('NEXT_PUBLIC_SUPABASE_URL');
+const supabaseAnonKey = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
 
-/**
- * DATABASE MANAGEMENT TIP:
- * When you upload images to Supabase Storage, ensure the bucket is 'public'.
- * Then, store the URL in your 'products' table. 
- * The app will automatically fetch the real images instead of these demos.
- */
+// Initialize client. If keys are missing, it will still be an object but calls will fail.
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder-url.supabase.co', 
+  supabaseAnonKey || 'placeholder-key'
+);

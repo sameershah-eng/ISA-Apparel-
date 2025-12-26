@@ -28,9 +28,9 @@ const WhatsAppButton: React.FC = () => (
 const BackToTop: React.FC = () => {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
-    const toggle = () => setVisible(window.scrollY > 500);
-    window.addEventListener('scroll', toggle);
-    return () => window.removeEventListener('scroll', toggle);
+    const handleScroll = () => setVisible(window.scrollY > 500);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
@@ -49,14 +49,19 @@ const App: React.FC = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [products, setProducts] = useState<Product[]>(SAMPLE_PRODUCTS);
 
-  // Example: Fetch from Supabase if keys exist
   useEffect(() => {
     const fetchProducts = async () => {
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
-      const { data, error } = await supabase.from('products').select('*, images(*)');
-      if (!error && data) {
-        // Handle transforming Supabase data to our Product type
-        // setProducts(data);
+      try {
+        // Only attempt fetch if we have a valid-looking URL
+        if (supabase.supabaseUrl && !supabase.supabaseUrl.includes('placeholder-url')) {
+          const { data, error } = await supabase.from('products').select('*, images(*)');
+          if (!error && data && data.length > 0) {
+            // Mapping logic would go here if data structure matches
+            // setProducts(data);
+          }
+        }
+      } catch (err) {
+        console.warn('Supabase fetch failed, falling back to sample products', err);
       }
     };
     fetchProducts();
