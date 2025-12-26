@@ -1,17 +1,20 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import ProductCard from '../components/ProductCard';
-import { SAMPLE_PRODUCTS } from '../constants';
-import { Category } from '../types';
+import { Category, Product } from '../types';
 
 interface ShopProps {
+  products: Product[];
   saleOnly?: boolean;
   heroTitle?: string;
   heroSubtitle?: string;
   heroImage?: string;
 }
 
+const PRODUCTS_PER_PAGE = 12;
+
 const Shop: React.FC<ShopProps> = ({ 
+  products,
   saleOnly, 
   heroTitle = "Ready to Wear", 
   heroSubtitle = "The Permanent Collection", 
@@ -20,25 +23,27 @@ const Shop: React.FC<ShopProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<Category | 'All'>('All');
   const [priceRange, setPriceRange] = useState<number>(1500);
+  const [visibleCount, setVisibleCount] = useState(PRODUCTS_PER_PAGE);
 
-  // Initial base filtering (Sale vs All)
+  // Reset visibility when filters change
+  useEffect(() => {
+    setVisibleCount(PRODUCTS_PER_PAGE);
+  }, [searchQuery, activeCategory, priceRange]);
+
   const baseProducts = useMemo(() => {
-    return SAMPLE_PRODUCTS.filter(p => {
-      const isSale = p.price < 150 || p.title.toLowerCase().includes('archive');
+    return products.filter(p => {
+      const isSale = p.price < 250 || p.title.toLowerCase().includes('sale');
       const isBespoke = p.category === 'Bespoke';
-      // Hide bespoke from shop/sale unless specifically requested
-      if (isBespoke) return false;
+      if (isBespoke && !saleOnly) return false;
       return saleOnly ? isSale : !isSale;
     });
-  }, [saleOnly]);
+  }, [products, saleOnly]);
 
-  // Dynamically get available categories from the base set
   const availableCategories = useMemo(() => {
     const cats = Array.from(new Set(baseProducts.map(p => p.category)));
     return ['All', ...cats.sort()] as (Category | 'All')[];
   }, [baseProducts]);
 
-  // Full derived filtering
   const filteredProducts = useMemo(() => {
     return baseProducts.filter(product => {
       const query = searchQuery.toLowerCase();
@@ -54,6 +59,9 @@ const Shop: React.FC<ShopProps> = ({
     });
   }, [baseProducts, searchQuery, activeCategory, priceRange]);
 
+  const displayedProducts = filteredProducts.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredProducts.length;
+
   const hasActiveFilters = searchQuery !== '' || activeCategory !== 'All' || priceRange < 1500;
 
   const resetFilters = () => {
@@ -64,7 +72,6 @@ const Shop: React.FC<ShopProps> = ({
 
   return (
     <div className="bg-white">
-      {/* Hero Section */}
       <section className="relative h-[45vh] flex items-center justify-center overflow-hidden bg-slate-900">
         <img 
           src={heroImage} 
@@ -78,12 +85,11 @@ const Shop: React.FC<ShopProps> = ({
       </section>
 
       <div className="max-w-7xl mx-auto px-4 py-16 md:py-24">
-        {/* Search Bar Mobile/Desktop */}
         <div className="mb-16">
           <div className="relative border-b border-slate-200 py-4 max-w-2xl mx-auto group">
             <input 
               type="text" 
-              placeholder="Search by collection, fabric or style..." 
+              placeholder="Search 100+ articles in the archive..." 
               className="w-full bg-transparent focus:outline-none text-xl font-light placeholder:italic placeholder:opacity-30 text-[#2C3468]"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -100,20 +106,16 @@ const Shop: React.FC<ShopProps> = ({
         </div>
 
         <div className="flex flex-col lg:flex-row gap-20">
-          {/* Sidebar Filters */}
           <aside className="w-full lg:w-64 space-y-12 flex-shrink-0">
-            {/* Reset Button */}
             <div className={`transition-all duration-500 overflow-hidden ${hasActiveFilters ? 'max-h-20 opacity-100 mb-8' : 'max-h-0 opacity-0'}`}>
               <button 
                 onClick={resetFilters}
                 className="w-full py-3 border border-red-100 text-red-600 text-[10px] uppercase font-black tracking-widest hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
               >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                Clear All Filters
+                Clear {filteredProducts.length} Results
               </button>
             </div>
 
-            {/* Categories */}
             <div className="space-y-6">
               <h3 className="text-[10px] uppercase font-black tracking-[0.3em] text-[#2C3468] border-b border-slate-100 pb-4">Category</h3>
               <div className="flex flex-col gap-4">
@@ -131,7 +133,6 @@ const Shop: React.FC<ShopProps> = ({
               </div>
             </div>
 
-            {/* Price Filter */}
             <div className="space-y-6 pt-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-[10px] uppercase font-black tracking-[0.3em] text-[#2C3468]">Max Price</h3>
@@ -139,52 +140,59 @@ const Shop: React.FC<ShopProps> = ({
               </div>
               <input 
                 type="range" 
-                min="20" 
+                min="100" 
                 max="1500" 
-                step="10"
+                step="50"
                 value={priceRange}
                 onChange={(e) => setPriceRange(parseInt(e.target.value))}
                 className="w-full h-1 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-[#2C3468]"
               />
-              <div className="flex justify-between text-[10px] text-slate-300 font-bold uppercase tracking-widest">
-                <span>$20</span>
-                <span>$1500</span>
-              </div>
-            </div>
-
-            {/* Assistance */}
-            <div className="p-8 bg-slate-50 rounded-sm space-y-4 mt-12 border border-slate-100">
-              <h4 className="text-[10px] uppercase font-black tracking-widest text-[#2C3468]">Need Assistance?</h4>
-              <p className="text-[11px] text-slate-500 leading-relaxed font-light">
-                Our consultants are available on WhatsApp to guide your selection.
-              </p>
-              <a href="https://wa.me/923142278722" className="block text-[10px] uppercase font-bold text-[#2C3468] underline underline-offset-4 hover:opacity-70 transition-opacity">Contact Concierge</a>
             </div>
           </aside>
 
-          {/* Product Grid */}
           <div className="flex-1">
-            {filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
-                {filteredProducts.map((product, idx) => (
-                  <div key={product.id} className="animate-fadeIn" style={{ animationDelay: `${idx * 50}ms` }}>
-                    <ProductCard product={product} />
+            <div className="mb-10 flex justify-between items-center text-[10px] uppercase tracking-widest text-slate-400 font-bold">
+               <span>Showing {displayedProducts.length} of {filteredProducts.length} items</span>
+               <div className="flex items-center gap-2">
+                 <span>Sort:</span>
+                 <select className="bg-transparent text-[#2C3468] focus:outline-none cursor-pointer">
+                    <option>Latest Arrivals</option>
+                    <option>Price: Low to High</option>
+                    <option>Price: High to Low</option>
+                 </select>
+               </div>
+            </div>
+
+            {displayedProducts.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
+                  {displayedProducts.map((product, idx) => (
+                    <div key={product.id} className="animate-fadeIn" style={{ animationDelay: `${(idx % 6) * 100}ms` }}>
+                      <ProductCard product={product} />
+                    </div>
+                  ))}
+                </div>
+                
+                {hasMore && (
+                  <div className="mt-24 flex flex-col items-center space-y-8">
+                    <div className="w-full h-px bg-slate-100 relative">
+                       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-8">
+                         <span className="text-[10px] uppercase tracking-[0.4em] text-slate-300 font-bold">You've viewed {displayedProducts.length} of {filteredProducts.length}</span>
+                       </div>
+                    </div>
+                    <button 
+                      onClick={() => setVisibleCount(prev => prev + PRODUCTS_PER_PAGE)}
+                      className="px-16 py-5 border border-[#2C3468] text-[#2C3468] text-[10px] uppercase font-black tracking-[0.3em] hover:bg-[#2C3468] hover:text-white transition-all duration-500 shadow-xl transform active:scale-[0.98]"
+                    >
+                      Load More Articles
+                    </button>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             ) : (
               <div className="flex flex-col items-center justify-center py-40 text-center animate-fadeIn">
-                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-8 border border-slate-100">
-                  <svg className="w-8 h-8 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                </div>
-                <h3 className="text-2xl font-serif text-slate-800 mb-2 italic">No pieces found</h3>
-                <p className="text-slate-400 text-sm font-light max-w-xs mx-auto">Try refining your filters or search terms.</p>
-                <button 
-                  onClick={resetFilters}
-                  className="mt-8 px-10 py-4 bg-[#2C3468] text-white text-[10px] uppercase font-bold tracking-[0.2em] hover:opacity-90 transition-all shadow-xl"
-                >
-                  Clear All Filters
-                </button>
+                <h3 className="text-2xl font-serif text-slate-800 mb-2 italic">No articles match your criteria</h3>
+                <button onClick={resetFilters} className="mt-8 px-10 py-4 bg-[#2C3468] text-white text-[10px] uppercase font-bold tracking-[0.2em]">Reset Selection</button>
               </div>
             )}
           </div>

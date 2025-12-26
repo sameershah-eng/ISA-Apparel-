@@ -1,7 +1,11 @@
 
 import React, { useEffect, useRef } from 'react';
 import ProductCard from '../components/ProductCard';
-import { SAMPLE_PRODUCTS } from '../constants';
+import { Product } from '../types';
+
+interface HomeProps {
+  products: Product[];
+}
 
 const CategoryTile: React.FC<{ title: string; image: string; href?: string; className?: string }> = ({ title, image, href = "#/shop", className }) => (
   <a href={href} className={`relative overflow-hidden group ${className} animate-fadeIn`}>
@@ -15,7 +19,8 @@ const CategoryTile: React.FC<{ title: string; image: string; href?: string; clas
   </a>
 );
 
-const Home: React.FC = () => {
+// Define HomeProps to accept dynamic products from Supabase
+const Home: React.FC<HomeProps> = ({ products }) => {
   return (
     <div className="flex flex-col overflow-x-hidden">
       {/* 1. Hero Campaign Banner */}
@@ -83,7 +88,8 @@ const Home: React.FC = () => {
             <h2 className="text-5xl font-serif italic">Permanent Essentials</h2>
          </div>
          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
-            {SAMPLE_PRODUCTS.slice(0, 4).map((product, idx) => (
+            {/* Map over dynamic products from props */}
+            {products.slice(0, 4).map((product, idx) => (
                 <div key={product.id} className="animate-fadeIn" style={{ animationDelay: `${idx * 150}ms` }}>
                   <ProductCard product={product} />
                 </div>

@@ -1,10 +1,16 @@
 
 import React from 'react';
 import ProductCard from '../components/ProductCard';
-import { SAMPLE_PRODUCTS, Logo } from '../constants';
+import { Logo } from '../constants';
+import { Product } from '../types';
 
-const Tailoring: React.FC = () => {
-  const bespokeProducts = SAMPLE_PRODUCTS.filter(p => p.category === 'Bespoke');
+interface TailoringProps {
+  products: Product[];
+}
+
+const Tailoring: React.FC<TailoringProps> = ({ products }) => {
+  // Filter products from props based on Bespoke category
+  const bespokeProducts = products.filter(p => p.category === 'Bespoke');
 
   return (
     <div className="bg-white min-h-screen">

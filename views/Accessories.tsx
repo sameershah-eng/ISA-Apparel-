@@ -1,10 +1,15 @@
 
 import React from 'react';
 import ProductCard from '../components/ProductCard';
-import { SAMPLE_PRODUCTS } from '../constants';
+import { Product } from '../types';
 
-const Accessories: React.FC = () => {
-  const accessories = SAMPLE_PRODUCTS.filter(p => p.category === 'Accessories');
+interface AccessoriesProps {
+  products: Product[];
+}
+
+const Accessories: React.FC<AccessoriesProps> = ({ products }) => {
+  // Filter accessories from dynamic products prop
+  const accessories = products.filter(p => p.category === 'Accessories');
 
   return (
     <div className="bg-white min-h-screen">

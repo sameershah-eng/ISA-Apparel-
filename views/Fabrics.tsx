@@ -1,10 +1,15 @@
 
 import React from 'react';
 import ProductCard from '../components/ProductCard';
-import { SAMPLE_PRODUCTS } from '../constants';
+import { Product } from '../types';
 
-const Fabrics: React.FC = () => {
-  const fabricProducts = SAMPLE_PRODUCTS.filter(p => ['Dress Pant', 'Cotton Pant', 'Chino Pant'].includes(p.category));
+interface FabricsProps {
+  products: Product[];
+}
+
+const Fabrics: React.FC<FabricsProps> = ({ products }) => {
+  // Use products from props to handle dynamic Supabase data
+  const fabricProducts = products.filter(p => ['Dress Pant', 'Cotton Pant', 'Chino Pant'].includes(p.category));
 
   return (
     <div className="bg-white min-h-screen">

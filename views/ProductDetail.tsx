@@ -1,15 +1,16 @@
 
 import React, { useState } from 'react';
 import { Product, CartItem } from '../types';
-import { SAMPLE_PRODUCTS } from '../constants';
 
 interface ProductDetailProps {
+  products: Product[];
   slug: string;
   onAddToCart: (item: Omit<CartItem, 'id'>) => void;
 }
 
-const ProductDetail: React.FC<ProductDetailProps> = ({ slug, onAddToCart }) => {
-  const product = SAMPLE_PRODUCTS.find(p => p.slug === slug);
+const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCart }) => {
+  // Find product from dynamic products array instead of static sample set
+  const product = products.find(p => p.slug === slug);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedColor, setSelectedColor] = useState<string>(product?.colors[0].name || '');
   const [activeImage, setActiveImage] = useState(0);

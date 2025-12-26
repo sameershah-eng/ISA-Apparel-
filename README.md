@@ -1,46 +1,53 @@
+# ISA - Premium Apparel Management
 
-# ISA - Premium Apparel Launch Guide
+## 1. Database Population (100 Items)
+Run this SQL in your Supabase SQL Editor to populate the catalog. This script generates high-end trousers with realistic pricing and inventory levels.
 
-## 1. Project Overview
-ISA is a luxury DTC apparel brand focusing on high-end trousers. This website is built using **Next.js**-ready architecture (ported to a high-performance React SPA for this preview) with a focus on minimalism, luxury, and high conversion.
+```sql
+DO $$
+DECLARE
+    cat_id uuid;
+    prod_id uuid;
+    i integer;
+    titles text[] := ARRAY['Aristocrat', 'Regency', 'Highlands', 'Savile', 'Metropolitan', 'Riviera', 'Oxford', 'Cambridge', 'Diplomat', 'Statesman'];
+    fabrics text[] := ARRAY['Merino Wool', 'Cashmere Blend', 'Heavy Cotton Drill', 'Egyptian Linen', 'Technical Twill', 'Silk Wool', 'Brushed Flannel', 'Summer Corduroy'];
+    styles text[] := ARRAY['Trouser', 'Chino', 'Pleated Pant', 'Commuter Pant', 'Evening Slack', 'Atelier Edition'];
+    img_ids text[] := ARRAY['1594932224030-9455144cced3', '1624372927050-12484ec669b2', '1506630448388-4e683c67ddb0', '1593032465175-481ac7f401a0', '1539109136881-3be0616acf4b', '1541099649105-f69ad21f3246'];
+BEGIN
+    FOR i IN 1..100 LOOP
+        -- Select a random category
+        SELECT id INTO cat_id FROM categories ORDER BY random() LIMIT 1;
+        
+        -- Insert the product
+        INSERT INTO products (slug, title, price, description, long_description, stock, category_id)
+        VALUES (
+            lower(titles[(i % 10) + 1] || '-' || fabrics[(i % 8) + 1] || '-' || i),
+            titles[(i % 10) + 1] || ' ' || styles[(i % 6) + 1] || ' (No. ' || i || ')',
+            (random() * (650 - 185) + 185)::numeric(10,2),
+            'Hand-finished ' || fabrics[(i % 8) + 1] || ' ' || styles[(i % 6) + 1] || '.',
+            'Part of our ' || titles[(i % 10) + 1] || ' collection. Premium tailoring.',
+            floor(random() * 25 + 2),
+            cat_id
+        ) RETURNING id INTO prod_id;
+        
+        -- Insert Images (ORDER: product_id, url, sort_order)
+        INSERT INTO product_images (product_id, url, sort_order)
+        VALUES 
+            (prod_id, 'https://images.unsplash.com/photo-' || img_ids[(i % 6) + 1] || '?auto=format&fit=crop&w=800&q=80', 0),
+            (prod_id, 'https://images.unsplash.com/photo-' || img_ids[((i+1) % 6) + 1] || '?auto=format&fit=crop&w=800&q=80', 1);
+            
+        -- Insert Variants
+        INSERT INTO product_variants (product_id, size, color_name, color_hex, stock)
+        VALUES 
+            (prod_id, '32', 'Midnight', '#2C3468', 5), 
+            (prod_id, '34', 'Midnight', '#2C3468', 5),
+            (prod_id, '36', 'Midnight', '#2C3468', 5);
+    END LOOP;
+END $$;
+```
 
-## 2. Supabase Integration (Backend)
-
-### Database Schema
-Create the following tables in your Supabase project:
-1. `categories`: `id (uuid), name (text)`
-2. `products`: `id (uuid), slug (text), title (text), price (numeric), description (text), category_id (uuid)`
-3. `variants`: `id (uuid), product_id (uuid), size (text), color (text), hex (text), stock (integer)`
-4. `product_images`: `id (uuid), product_id (uuid), url (text), sort_order (integer)`
-
-### Image Management (For Business Owners)
-To manage your luxury catalog without writing code:
-1. **Upload**: Go to Supabase Dashboard > **Storage**. Create a bucket named `product-images`.
-2. **Organize**: Create folders by category (e.g., `/dress-pants/`).
-3. **Link**: Upload your high-res image, copy its **Public URL**, and paste it into the `product_images` table in the database.
-4. **Update**: When you change an image in Storage, keep the same name, or update the URL in the table. The website will reflect changes instantly.
-
-## 3. Deployment on Vercel
-This project is built to be deployed in minutes.
-
-### Step 1: GitHub
-1. Create a new repository on GitHub.
-2. Initialize and push this code to the repository.
-
-### Step 2: Vercel One-Click
-1. Go to [Vercel](https://vercel.com) and click **"Add New Project"**.
-2. Select your GitHub repository.
-3. Add these **Environment Variables**:
-   - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase Project URL.
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase API Key.
-4. Click **Deploy**.
-
-## 4. UI/UX Strategy
-- **Colors**: Strictly navy (`#2C3468`) and white, mirroring your logo for brand cohesion.
-- **Typography**: Playfair Display for headers (Luxury) and Inter for body (Modernity).
-- **Cart**: Slide-in drawer for frictionless shopping, ensuring the user never leaves their flow.
-
-## 5. Scaling Best Practices
-- **SEO**: Ensure unique meta tags for every product slug.
-- **Performance**: Use Supabase Edge Functions for complex operations like payment processing (Stripe integration).
-- **Images**: Always use `.webp` or `.avif` formats for lightning-fast mobile loads.
+## 2. Dynamic Features
+- **Pagination**: The Shop view now automatically paginates items (12 per page) to ensure smooth scrolling with 100+ items.
+- **Search**: Real-time fuzzy search works across titles, categories, and fabric descriptions.
+- **Price Filter**: Range slider allowing clients to narrow down by budget.
+- **Live Inventory**: "Limited Availability" badges appear dynamically when a product's database stock falls below 5.
