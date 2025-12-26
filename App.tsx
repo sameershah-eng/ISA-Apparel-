@@ -10,6 +10,7 @@ import Fabrics from './views/Fabrics';
 import Tailoring from './views/Tailoring';
 import Accessories from './views/Accessories';
 import Sale from './views/Sale';
+import Checkout from './views/Checkout';
 import { CartItem } from './types';
 import ChatBot from './components/ChatBot';
 
@@ -78,6 +79,8 @@ const App: React.FC = () => {
         return <Accessories />;
       case '#/sale':
         return <Sale />;
+      case '#/checkout':
+        return <Checkout cartItems={cartItems} />;
       default:
         if (path.startsWith('#/product/')) {
           const slug = path.replace('#/product/', '');

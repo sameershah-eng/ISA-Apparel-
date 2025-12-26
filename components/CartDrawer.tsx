@@ -14,6 +14,11 @@ interface CartDrawerProps {
 const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdateQuantity, onRemove }) => {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+  const handleCheckout = () => {
+    onClose();
+    window.location.hash = '#/checkout';
+  };
+
   return (
     <>
       {/* Backdrop */}
@@ -78,7 +83,10 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
                 <span className="text-slate-500 font-medium">Subtotal</span>
                 <span className="text-2xl font-bold text-[#2C3468]">${subtotal.toFixed(2)}</span>
               </div>
-              <button className="w-full py-4 bg-[#2C3468] text-white font-bold uppercase tracking-widest hover:bg-opacity-90 transition-all transform active:scale-[0.98] shadow-lg">
+              <button 
+                onClick={handleCheckout}
+                className="w-full py-4 bg-[#2C3468] text-white font-bold uppercase tracking-widest hover:bg-opacity-90 transition-all transform active:scale-[0.98] shadow-lg"
+              >
                 Proceed to Checkout
               </button>
               <p className="text-center text-xs text-slate-400 mt-4">Taxes and shipping calculated at checkout</p>
