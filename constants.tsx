@@ -86,15 +86,27 @@ export const SAMPLE_PRODUCTS: Product[] = [
 ];
 
 export const Logo: React.FC<{ className?: string }> = ({ className }) => (
-  <div className={`flex items-center gap-1 font-bold tracking-tighter ${className}`}>
-    <div className="w-6 h-8 bg-[#2C3468] relative flex items-center justify-center overflow-hidden">
-        <div className="w-[2px] h-full bg-white absolute left-1/2 -translate-x-1/2 flex flex-col justify-around py-1">
-            {[...Array(6)].map((_, i) => (
-                <div key={i} className="w-1 h-[2px] bg-slate-300"></div>
-            ))}
-        </div>
-        <div className="w-2 h-3 bg-white border border-slate-400 rounded-sm z-10"></div>
+  <div className={`flex items-end gap-0.5 select-none ${className}`}>
+    {/* Zipper "I" */}
+    <div className="relative w-[18px] h-[36px] bg-[#2C3468] flex flex-col items-center justify-between overflow-hidden rounded-sm">
+      {/* Zipper Teeth Left */}
+      <div className="absolute left-0 top-0 bottom-0 w-[4px] flex flex-col justify-around py-1">
+        {[...Array(8)].map((_, i) => (
+          <div key={`l-${i}`} className="w-full h-[1px] bg-white/40"></div>
+        ))}
+      </div>
+      {/* Zipper Teeth Right */}
+      <div className="absolute right-0 top-0 bottom-0 w-[4px] flex flex-col justify-around py-1">
+        {[...Array(8)].map((_, i) => (
+          <div key={`r-${i}`} className="w-full h-[1px] bg-white/40"></div>
+        ))}
+      </div>
+      {/* Slider Puller */}
+      <div className="relative z-10 mt-2 w-[10px] h-[16px] bg-white border border-slate-300 rounded-sm flex items-center justify-center shadow-sm">
+         <div className="w-[4px] h-[8px] border border-slate-200 rounded-full bg-slate-50"></div>
+      </div>
     </div>
-    <span className="text-2xl text-[#2C3468] font-serif uppercase tracking-tight">ISA</span>
+    {/* "SA" Text */}
+    <span className="text-4xl leading-none font-black text-[#2C3468] tracking-tighter -mb-0.5">SA</span>
   </div>
 );

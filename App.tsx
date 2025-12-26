@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
+import ChatBot from './components/ChatBot';
 import Home from './views/Home';
 import ProductDetail from './views/ProductDetail';
 import { CartItem, Product } from './types';
@@ -36,7 +37,7 @@ const BackToTop: React.FC = () => {
   return (
     <button 
       onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}
-      className={`fixed bottom-8 right-8 z-40 bg-white border border-slate-200 text-[#2C3468] p-3 shadow-xl hover:bg-slate-50 transition-all ${visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}
+      className={`fixed bottom-28 right-8 z-40 bg-white border border-slate-200 text-[#2C3468] p-3 rounded-full shadow-xl hover:bg-slate-50 transition-all ${visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}
     >
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7"/></svg>
     </button>
@@ -52,11 +53,9 @@ const App: React.FC = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        // Only attempt fetch if we have a valid-looking URL
         if (supabase.supabaseUrl && !supabase.supabaseUrl.includes('placeholder-url')) {
           const { data, error } = await supabase.from('products').select('*, images(*)');
           if (!error && data && data.length > 0) {
-            // Mapping logic would go here if data structure matches
             // setProducts(data);
           }
         }
@@ -135,6 +134,7 @@ const App: React.FC = () => {
 
       <WhatsAppButton />
       <BackToTop />
+      <ChatBot />
     </div>
   );
 };
