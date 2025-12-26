@@ -158,7 +158,8 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems }) => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="text-[11px] font-bold text-slate-800 uppercase truncate">{item.title}</h4>
-                      <p className="text-[10px] text-slate-400 mt-1 uppercase">{item.color} | {item.size}</p>
+                      {/* Fix: removed non-existent item.color */}
+                      <p className="text-[10px] text-slate-400 mt-1 uppercase">Size {item.size}</p>
                       <div className="flex justify-between items-center mt-2">
                         <span className="text-[10px] text-slate-500">Qty: {item.quantity}</span>
                         <span className="text-xs font-bold text-[#2C3468]">${(item.price * item.quantity).toFixed(2)}</span>

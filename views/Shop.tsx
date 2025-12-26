@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import ProductCard from '../components/ProductCard';
-import { Category, Product } from '../types';
+import { Product } from '../types';
 
 interface ShopProps {
   products: Product[];
@@ -21,7 +21,8 @@ const Shop: React.FC<ShopProps> = ({
   heroImage = "https://images.unsplash.com/photo-1594932224030-9455144cced3?q=80&w=2070&auto=format&fit=crop"
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<Category | 'All'>('All');
+  // Fix: activeCategory is a string matching Product.category
+  const [activeCategory, setActiveCategory] = useState<string>('All');
   const [priceRange, setPriceRange] = useState<number>(1500);
   const [visibleCount, setVisibleCount] = useState(PRODUCTS_PER_PAGE);
 
@@ -41,7 +42,7 @@ const Shop: React.FC<ShopProps> = ({
 
   const availableCategories = useMemo(() => {
     const cats = Array.from(new Set(baseProducts.map(p => p.category)));
-    return ['All', ...cats.sort()] as (Category | 'All')[];
+    return ['All', ...cats.sort()];
   }, [baseProducts]);
 
   const filteredProducts = useMemo(() => {

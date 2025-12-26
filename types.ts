@@ -1,6 +1,4 @@
 
-export type Category = 'Dress Pant' | 'Active Waist Dress Pant' | 'Cotton Pant' | 'Chino Pant' | 'Accessories' | 'Bespoke' | 'All';
-
 export interface Product {
   id: string;
   slug: string;
