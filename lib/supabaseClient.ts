@@ -1,33 +1,14 @@
-
 import { createClient } from '@supabase/supabase-js';
 
+// These are your actual credentials from the Supabase Dashboard
+const supabaseUrl = 'https://cyfuylwrbyqyfynfzgrp.supabase.co';
+// Use the "Publishable key" (safe for the browser)
+const supabaseAnonKey = 'sb_publishable_6nwafGPrtqm9XtaQ8LgEow_1io4bRKq';
+
 /**
- * Safely access environment variables. 
- * In a standard Vite/React environment, these are usually injected into a global process or import.meta.
+ * Initializing the client with your project-specific details.
+ * The Publishable key is used to respect Row Level Security (RLS).
  */
-const getEnv = (key: string): string => {
-  try {
-    // Try process.env (standard for many bundlers)
-    if (typeof process !== 'undefined' && process.env && process.env[key]) {
-      return process.env[key] as string;
-    }
-    // Try import.meta.env (Vite standard)
-    // @ts-ignore
-    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key]) {
-      // @ts-ignore
-      return import.meta.env[key] as string;
-    }
-  } catch (e) {
-    // Fallback if access is blocked or throws
-  }
-  return '';
-};
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const supabaseUrl = getEnv('NEXT_PUBLIC_SUPABASE_URL') || getEnv('VITE_SUPABASE_URL');
-const supabaseAnonKey = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY') || getEnv('VITE_SUPABASE_ANON_KEY');
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('ISA: Supabase configuration missing. Ensure environment variables are set. Catalog may not load.');
-}
-
-export const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseAnonKey || 'placeholder');
+console.log('ISA: Supabase client connected to project cyfuylwrbyqyfynfzgrp');

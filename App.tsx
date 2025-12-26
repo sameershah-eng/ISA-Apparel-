@@ -28,9 +28,8 @@ const App: React.FC = () => {
         setIsLoading(true);
         setFetchError(null);
         
-        console.log('ISA: Starting catalog fetch...');
+        console.log('ISA: Fetching catalog from cyfuylwrbyqyfynfzgrp...');
 
-        // Querying products with joined data
         const { data: dbProducts, error } = await supabase
           .from('products')
           .select(`
@@ -41,18 +40,16 @@ const App: React.FC = () => {
           `)
           .order('created_at', { ascending: false });
 
-        if (error) {
-          throw new Error(error.message);
-        }
+        if (error) throw error;
 
         if (!dbProducts || dbProducts.length === 0) {
-          console.warn('ISA: Database returned 0 products.');
+          console.warn('ISA: No products found in the database.');
           setProducts([]);
           return;
         }
 
         const transformed: Product[] = dbProducts.map(p => {
-          // Supabase joins can return an object OR an array depending on the FK relationship direction
+          // Safe category mapping
           let categoryName = 'Uncategorized';
           if (p.categories) {
             categoryName = Array.isArray(p.categories) 
@@ -62,37 +59,37 @@ const App: React.FC = () => {
           
           return {
             id: p.id,
-            slug: p.slug,
-            title: p.title,
+            slug: p.slug || `product-${p.id}`,
+            title: p.title || 'Untitled Product',
             category: categoryName,
-            price: typeof p.price === 'string' ? parseFloat(p.price) : (p.price || 0),
+            price: p.price ? parseFloat(p.price.toString()) : 0,
             description: p.description || '',
             longDescription: p.long_description || '',
-            images: Array.isArray(p.product_images)
-              ? p.product_images
+            // Robust check for images to prevent "cannot map of undefined"
+            images: Array.isArray(p.product_images) && p.product_images.length > 0
+              ? [...p.product_images]
                   .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0))
                   .map((img: any) => img.url)
-              : [],
+              : ['https://images.unsplash.com/photo-1594932224030-9455144cced3?auto=format&fit=crop&w=800&q=80'],
             sizes: Array.isArray(p.product_variants)
               ? Array.from(new Set(p.product_variants.map((v: any) => v.size))).filter(Boolean) as string[]
-              : [],
+              : ['30', '32', '34', '36'],
             colors: Array.isArray(p.product_variants)
               ? p.product_variants.reduce((acc: any[], v: any) => {
                   if (v.color_name && !acc.find(c => c.name === v.color_name)) {
-                    acc.push({ name: v.color_name, hex: v.color_hex });
+                    acc.push({ name: v.color_name, hex: v.color_hex || '#000000' });
                   }
                   return acc;
                 }, [])
-              : [],
+              : [{ name: 'Default', hex: '#2C3468' }],
             stock: p.stock || 0
           };
         });
 
-        console.log(`ISA: Successfully processed ${transformed.length} products.`);
         setProducts(transformed);
       } catch (err: any) {
-        console.error('ISA: Catalog sync failed:', err);
-        setFetchError(err.message || 'Failed to connect to the product database.');
+        console.error('ISA Sync Error:', err);
+        setFetchError(err.message || 'Connection failed.');
       } finally {
         setIsLoading(false);
       }
@@ -141,8 +138,7 @@ const App: React.FC = () => {
   const renderView = () => {
     const path = currentRoute.split('?')[0]; 
     
-    // We handle the loading/error states in the main return, but as a fallback:
-    if (isLoading && products.length === 0) return <div className="h-screen bg-white" />;
+    if (isLoading && products.length === 0) return <div className="h-screen" />;
 
     switch (path) {
       case '#/':
@@ -178,23 +174,20 @@ const App: React.FC = () => {
       
       <main className="flex-1 pt-32 md:pt-44">
         {fetchError ? (
-          <div className="max-w-xl mx-auto mt-20 p-8 text-center animate-fadeIn">
-            <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-            </div>
-            <h3 className="text-xl font-serif italic text-slate-800 mb-2">Something went wrong</h3>
+          <div className="max-w-xl mx-auto mt-20 p-8 text-center bg-white shadow-sm border border-slate-100 animate-fadeIn">
+            <h3 className="text-xl font-serif italic text-slate-800 mb-2">Connection Interrupted</h3>
             <p className="text-slate-500 text-sm mb-8 font-light">{fetchError}</p>
             <button 
               onClick={() => window.location.reload()}
               className="px-8 py-3 bg-[#2C3468] text-white text-[10px] uppercase font-bold tracking-widest shadow-xl"
             >
-              Reload Experience
+              Retry Connection
             </button>
           </div>
         ) : isLoading && products.length === 0 ? (
           <div className="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center">
             <div className="w-12 h-12 border-t-2 border-[#2C3468] rounded-full animate-spin mb-6"></div>
-            <p className="text-[10px] uppercase tracking-[0.5em] font-black text-[#2C3468] animate-pulse">Initializing Atelier</p>
+            <p className="text-[10px] uppercase tracking-[0.5em] font-black text-[#2C3468] animate-pulse">Establishing Secure Connection</p>
           </div>
         ) : (
           <div key={currentRoute} className="animate-fadeIn">
