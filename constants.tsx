@@ -49,12 +49,45 @@ export const SAMPLE_PRODUCTS: Product[] = [
   },
   {
     id: '3',
+    slug: 'pebbled-leather-belt',
+    title: 'Heritage Leather Belt',
+    category: 'Accessories',
+    price: 85.00,
+    description: 'Full-grain Italian calfskin with brass buckle.',
+    longDescription: 'Hand-finished in our Florence workshop. This belt is designed to age beautifully, developing a unique patina over time.',
+    images: [
+      'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=800&auto=format&fit=crop'
+    ],
+    sizes: ['32', '34', '36'],
+    colors: [
+      { name: 'Tan', hex: '#A0522D' },
+      { name: 'Deep Black', hex: '#000000' }
+    ],
+    stock: 25
+  },
+  {
+    id: '4',
+    slug: 'bespoke-fitting-session',
+    title: 'Signature Fitting Service',
+    category: 'Bespoke',
+    price: 450.00,
+    description: 'Full personal measurement and pattern creation.',
+    longDescription: 'A one-on-one session with our master tailor to create your unique digital pattern and select exclusive house fabrics.',
+    images: [
+      'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=800&auto=format&fit=crop'
+    ],
+    sizes: ['N/A'],
+    colors: [{ name: 'N/A', hex: '#FFFFFF' }],
+    stock: 5
+  },
+  {
+    id: '5',
     slug: 'essential-chino',
     title: 'The Signature Chino',
     category: 'Chino Pant',
     price: 165.00,
     description: 'Double-brushed cotton for a soft hand-feel.',
-    longDescription: 'Our signature chino is garment-dyed to achieve a deep, consistent color that ages beautifully. A versatile staple for every wardrobe.',
+    longDescription: 'Our signature chino is garment-dyed to achieve a deep, consistent color that ages beautifully.',
     images: [
       'https://images.unsplash.com/photo-1473966968600-fa804b86d30b?q=80&w=800&auto=format&fit=crop'
     ],
@@ -66,47 +99,129 @@ export const SAMPLE_PRODUCTS: Product[] = [
     stock: 20
   },
   {
-    id: '4',
-    slug: 'summer-cotton-pant',
-    title: 'Lightweight Cotton Trouser',
+    id: '6',
+    slug: 'silk-pocket-square',
+    title: 'Hand-Rolled Silk Square',
+    category: 'Accessories',
+    price: 45.00,
+    description: '100% Silk with hand-rolled edges.',
+    longDescription: 'A subtle touch of luxury for your blazer. Available in our signature house colors.',
+    images: [
+      'https://images.unsplash.com/photo-1617114919297-3c8ddb01f599?q=80&w=800&auto=format&fit=crop'
+    ],
+    sizes: ['ONE SIZE'],
+    colors: [{ name: 'Navy', hex: '#2C3468' }],
+    stock: 50
+  },
+  {
+    id: '7',
+    slug: 'summer-linen-trouser',
+    title: 'Riviera Linen Trouser',
     category: 'Cotton Pant',
-    price: 155.00,
-    description: 'Breathable cotton-linen blend.',
-    longDescription: 'Perfect for warmer climates, this blend provides the structure of cotton with the cooling properties of linen.',
+    price: 135.00,
+    description: 'Breathable linen-cotton blend for summer.',
+    longDescription: 'The Riviera is our lightest trouser yet. Perfect for coastal events or summer weddings.',
     images: [
       'https://images.unsplash.com/photo-1506630448388-4e683c67ddb0?q=80&w=800&auto=format&fit=crop'
     ],
     sizes: ['30', '32', '34', '36'],
-    colors: [
-      { name: 'Cream', hex: '#FFFDD0' },
-      { name: 'Sky Blue', hex: '#87CEEB' }
-    ],
+    colors: [{ name: 'Cream', hex: '#FFFDD0' }],
     stock: 15
+  },
+  {
+    id: '8',
+    slug: 'limited-edition-cashmere',
+    title: 'Cashmere Blend Chino',
+    category: 'Chino Pant',
+    price: 295.00,
+    description: 'Premium cotton infused with 15% cashmere.',
+    longDescription: 'Unparalleled softness meets the rugged utility of a chino. A limited seasonal release.',
+    images: [
+      'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?q=80&w=800&auto=format&fit=crop'
+    ],
+    sizes: ['32', '34', '36'],
+    colors: [{ name: 'Charcoal', hex: '#36454F' }],
+    stock: 3
+  },
+  {
+    id: '9',
+    slug: 'archived-wool-pant',
+    title: 'Archive Grey Wool',
+    category: 'Dress Pant',
+    price: 120.00,
+    description: 'Archive stock from previous season.',
+    longDescription: 'Classic fit wool trousers from the AW23 collection. Exceptional value for high-end tailoring.',
+    images: [
+      'https://images.unsplash.com/photo-1542272454315-4c01d7abdf4a?q=80&w=800&auto=format&fit=crop'
+    ],
+    sizes: ['34', '36'],
+    colors: [{ name: 'Grey Heather', hex: '#BEBEBE' }],
+    stock: 8
+  },
+  {
+    id: '10',
+    slug: 'leather-card-holder',
+    title: 'Minimalist Card Holder',
+    category: 'Accessories',
+    price: 65.00,
+    description: 'Slim leather wallet for 4-6 cards.',
+    longDescription: 'The perfect companion for your ISA trousers. Slim enough to fit comfortably in front or back pockets without creating a bulge.',
+    images: [
+      'https://images.unsplash.com/photo-1627123424574-724758594e93?q=80&w=800&auto=format&fit=crop'
+    ],
+    sizes: ['N/A'],
+    colors: [{ name: 'Saddle', hex: '#8B4513' }],
+    stock: 40
+  },
+  {
+    id: '11',
+    slug: 'merino-wool-socks',
+    title: 'Luxury Ribbed Socks',
+    category: 'Accessories',
+    price: 25.00,
+    description: 'Over-the-calf merino wool dress socks.',
+    longDescription: 'Reinforced heel and toe for durability. Stays up all day without restriction.',
+    images: [
+      'https://images.unsplash.com/photo-1582966298438-641ff1f70a2d?q=80&w=800&auto=format&fit=crop'
+    ],
+    sizes: ['ONE SIZE'],
+    colors: [{ name: 'Navy', hex: '#2C3468' }],
+    stock: 100
+  },
+  {
+    id: '12',
+    slug: 'bespoke-overcoat-service',
+    title: 'Atelier Overcoat Service',
+    category: 'Bespoke',
+    price: 1200.00,
+    description: 'Fully custom made-to-measure outerwear.',
+    longDescription: 'A complete custom experience. Choose from over 500 premium fabrics for a coat that will last a lifetime.',
+    images: [
+      'https://images.unsplash.com/photo-1544022613-e87ca75a784a?q=80&w=800&auto=format&fit=crop'
+    ],
+    sizes: ['N/A'],
+    colors: [{ name: 'Custom', hex: '#FFFFFF' }],
+    stock: 2
   }
 ];
 
 export const Logo: React.FC<{ className?: string }> = ({ className }) => (
-  <div className={`flex items-end gap-0.5 select-none ${className}`}>
-    {/* Zipper "I" */}
-    <div className="relative w-[18px] h-[36px] bg-[#2C3468] flex flex-col items-center justify-between overflow-hidden rounded-sm">
-      {/* Zipper Teeth Left */}
-      <div className="absolute left-0 top-0 bottom-0 w-[4px] flex flex-col justify-around py-1">
-        {[...Array(8)].map((_, i) => (
-          <div key={`l-${i}`} className="w-full h-[1px] bg-white/40"></div>
+  <div className={`flex items-end gap-1 select-none ${className}`}>
+    <div className="relative w-[22px] h-[40px] bg-[#2C3468] flex flex-col items-center justify-between overflow-hidden rounded-[2px]">
+      <div className="absolute left-0 top-0 bottom-0 w-[5px] flex flex-col justify-around py-1">
+        {[...Array(10)].map((_, i) => (
+          <div key={`l-${i}`} className="w-full h-[1px] bg-white/30"></div>
         ))}
       </div>
-      {/* Zipper Teeth Right */}
-      <div className="absolute right-0 top-0 bottom-0 w-[4px] flex flex-col justify-around py-1">
-        {[...Array(8)].map((_, i) => (
-          <div key={`r-${i}`} className="w-full h-[1px] bg-white/40"></div>
+      <div className="absolute right-0 top-0 bottom-0 w-[5px] flex flex-col justify-around py-1">
+        {[...Array(10)].map((_, i) => (
+          <div key={`r-${i}`} className="w-full h-[1px] bg-white/30"></div>
         ))}
       </div>
-      {/* Slider Puller */}
-      <div className="relative z-10 mt-2 w-[10px] h-[16px] bg-white border border-slate-300 rounded-sm flex items-center justify-center shadow-sm">
-         <div className="w-[4px] h-[8px] border border-slate-200 rounded-full bg-slate-50"></div>
+      <div className="relative z-10 mt-3 w-[12px] h-[18px] bg-white border border-slate-300 rounded-sm flex items-center justify-center shadow-sm">
+         <div className="w-[5px] h-[9px] border border-slate-200 rounded-full bg-slate-50"></div>
       </div>
     </div>
-    {/* "SA" Text */}
-    <span className="text-4xl leading-none font-black text-[#2C3468] tracking-tighter -mb-0.5">SA</span>
+    <span className="text-5xl leading-none font-black text-[#2C3468] tracking-tighter -mb-1">SA</span>
   </div>
 );

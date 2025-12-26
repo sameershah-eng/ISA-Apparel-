@@ -1,5 +1,5 @@
 
-export type Category = 'Dress Pant' | 'Active Waist Dress Pant' | 'Cotton Pant' | 'Chino Pant';
+export type Category = 'Dress Pant' | 'Active Waist Dress Pant' | 'Cotton Pant' | 'Chino Pant' | 'Accessories' | 'Bespoke';
 
 export interface Product {
   id: string;
