@@ -5,11 +5,10 @@ import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
 import Home from './views/Home';
 import ProductDetail from './views/ProductDetail';
-import ReadyToWear from './views/ReadyToWear';
+import Shop from './views/Shop';
 import Fabrics from './views/Fabrics';
 import Tailoring from './views/Tailoring';
 import Accessories from './views/Accessories';
-import Sale from './views/Sale';
 import Checkout from './views/Checkout';
 import { CartItem } from './types';
 import ChatBot from './components/ChatBot';
@@ -21,14 +20,12 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const handleHashChange = () => {
-      // Small delay to ensure browser address bar is fully updated
       const newHash = window.location.hash || '#/';
       setCurrentRoute(newHash);
       window.scrollTo({ top: 0, behavior: 'instant' });
     };
 
     window.addEventListener('hashchange', handleHashChange);
-    // Trigger once on mount
     handleHashChange();
     
     return () => window.removeEventListener('hashchange', handleHashChange);
@@ -70,7 +67,13 @@ const App: React.FC = () => {
       case '':
         return <Home />;
       case '#/shop':
-        return <ReadyToWear />;
+        return (
+          <Shop 
+            heroTitle="Ready to Wear" 
+            heroSubtitle="The Permanent Collection" 
+            heroImage="https://images.unsplash.com/photo-1594932224030-9455144cced3?q=80&w=2070&auto=format&fit=crop" 
+          />
+        );
       case '#/fabrics':
         return <Fabrics />;
       case '#/tailoring':
@@ -78,7 +81,14 @@ const App: React.FC = () => {
       case '#/accessories':
         return <Accessories />;
       case '#/sale':
-        return <Sale />;
+        return (
+          <Shop 
+            saleOnly 
+            heroTitle="The Archive" 
+            heroSubtitle="Seasonal Event — Up to 50% Off" 
+            heroImage="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070&auto=format&fit=crop"
+          />
+        );
       case '#/checkout':
         return <Checkout cartItems={cartItems} />;
       default:
