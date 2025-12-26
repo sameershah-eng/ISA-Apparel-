@@ -20,36 +20,58 @@ const App: React.FC = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Core Data Sync Hook
   useEffect(() => {
     const fetchCatalog = async () => {
       try {
         setIsLoading(true);
-        // Querying products with joined images, categories, and variants
+        setFetchError(null);
+        
+        console.log('ISA: Starting catalog fetch...');
+
+        // Querying products with joined data
         const { data: dbProducts, error } = await supabase
           .from('products')
           .select(`
             *,
-            categories (name),
+            categories:category_id (name),
             product_images (url, sort_order),
             product_variants (size, color_name, color_hex, stock)
           `)
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase Query Error:', error.message);
+          setFetchError(error.message);
+          return;
+        }
 
-        if (dbProducts) {
-          const transformed: Product[] = dbProducts.map(p => ({
+        if (!dbProducts || dbProducts.length === 0) {
+          console.warn('ISA: Database returned 0 products. Check if RLS is enabled or if data exists.');
+          setProducts([]);
+          return;
+        }
+
+        console.log(`ISA: Successfully fetched ${dbProducts.length} items.`);
+
+        const transformed: Product[] = dbProducts.map(p => {
+          // Handle the nested category object - Supabase returns an object when joined on a single ID
+          const categoryName = p.categories?.name || 'Uncategorized';
+          
+          return {
             id: p.id,
             slug: p.slug,
             title: p.title,
-            category: p.categories?.name || 'Uncategorized',
+            category: categoryName,
             price: parseFloat(p.price),
             description: p.description || '',
             longDescription: p.long_description || '',
             images: p.product_images
-              ? p.product_images.sort((a: any, b: any) => a.sort_order - b.sort_order).map((img: any) => img.url)
+              ? p.product_images
+                  .sort((a: any, b: any) => a.sort_order - b.sort_order)
+                  .map((img: any) => img.url)
               : [],
             sizes: p.product_variants 
               ? Array.from(new Set(p.product_variants.map((v: any) => v.size))).filter(Boolean) as string[]
@@ -63,11 +85,13 @@ const App: React.FC = () => {
                 }, [])
               : [],
             stock: p.stock || 0
-          }));
-          setProducts(transformed);
-        }
-      } catch (err) {
-        console.error('Supabase fetch failed:', err);
+          };
+        });
+
+        setProducts(transformed);
+      } catch (err: any) {
+        console.error('ISA: Unexpected fetch failure:', err);
+        setFetchError(err.message);
       } finally {
         setIsLoading(false);
       }
@@ -116,7 +140,6 @@ const App: React.FC = () => {
   const renderView = () => {
     const path = currentRoute.split('?')[0]; 
     
-    // Loading state for the specific view content if necessary
     if (isLoading && products.length === 0) return null;
 
     switch (path) {
@@ -152,7 +175,20 @@ const App: React.FC = () => {
       />
       
       <main className="flex-1 pt-32 md:pt-44">
-        {isLoading && products.length === 0 ? (
+        {fetchError && (
+          <div className="max-w-xl mx-auto mt-20 p-6 bg-red-50 border border-red-100 rounded-lg text-center">
+            <h3 className="text-red-800 font-bold mb-2">Connection Error</h3>
+            <p className="text-red-600 text-sm mb-4">{fetchError}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-red-600 text-white text-xs font-bold uppercase tracking-widest rounded"
+            >
+              Retry Connection
+            </button>
+          </div>
+        )}
+
+        {isLoading && products.length === 0 && !fetchError ? (
           <div className="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center">
             <div className="w-16 h-16 border-b-2 border-[#2C3468] rounded-full animate-spin mb-6"></div>
             <p className="text-[10px] uppercase tracking-[0.4em] font-black text-[#2C3468]">Syncing ISA Catalog</p>
