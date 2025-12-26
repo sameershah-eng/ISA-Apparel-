@@ -22,7 +22,6 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Core Data Sync Hook
   useEffect(() => {
     const fetchCatalog = async () => {
       try {
@@ -43,40 +42,41 @@ const App: React.FC = () => {
           .order('created_at', { ascending: false });
 
         if (error) {
-          console.error('Supabase Query Error:', error.message);
-          setFetchError(error.message);
-          return;
+          throw new Error(error.message);
         }
 
         if (!dbProducts || dbProducts.length === 0) {
-          console.warn('ISA: Database returned 0 products. Check if RLS is enabled or if data exists.');
+          console.warn('ISA: Database returned 0 products.');
           setProducts([]);
           return;
         }
 
-        console.log(`ISA: Successfully fetched ${dbProducts.length} items.`);
-
         const transformed: Product[] = dbProducts.map(p => {
-          // Handle the nested category object - Supabase returns an object when joined on a single ID
-          const categoryName = p.categories?.name || 'Uncategorized';
+          // Supabase joins can return an object OR an array depending on the FK relationship direction
+          let categoryName = 'Uncategorized';
+          if (p.categories) {
+            categoryName = Array.isArray(p.categories) 
+              ? (p.categories[0]?.name || 'Uncategorized') 
+              : (p.categories.name || 'Uncategorized');
+          }
           
           return {
             id: p.id,
             slug: p.slug,
             title: p.title,
             category: categoryName,
-            price: parseFloat(p.price),
+            price: typeof p.price === 'string' ? parseFloat(p.price) : (p.price || 0),
             description: p.description || '',
             longDescription: p.long_description || '',
-            images: p.product_images
+            images: Array.isArray(p.product_images)
               ? p.product_images
-                  .sort((a: any, b: any) => a.sort_order - b.sort_order)
+                  .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0))
                   .map((img: any) => img.url)
               : [],
-            sizes: p.product_variants 
+            sizes: Array.isArray(p.product_variants)
               ? Array.from(new Set(p.product_variants.map((v: any) => v.size))).filter(Boolean) as string[]
               : [],
-            colors: p.product_variants 
+            colors: Array.isArray(p.product_variants)
               ? p.product_variants.reduce((acc: any[], v: any) => {
                   if (v.color_name && !acc.find(c => c.name === v.color_name)) {
                     acc.push({ name: v.color_name, hex: v.color_hex });
@@ -88,10 +88,11 @@ const App: React.FC = () => {
           };
         });
 
+        console.log(`ISA: Successfully processed ${transformed.length} products.`);
         setProducts(transformed);
       } catch (err: any) {
-        console.error('ISA: Unexpected fetch failure:', err);
-        setFetchError(err.message);
+        console.error('ISA: Catalog sync failed:', err);
+        setFetchError(err.message || 'Failed to connect to the product database.');
       } finally {
         setIsLoading(false);
       }
@@ -140,7 +141,8 @@ const App: React.FC = () => {
   const renderView = () => {
     const path = currentRoute.split('?')[0]; 
     
-    if (isLoading && products.length === 0) return null;
+    // We handle the loading/error states in the main return, but as a fallback:
+    if (isLoading && products.length === 0) return <div className="h-screen bg-white" />;
 
     switch (path) {
       case '#/':
@@ -175,23 +177,24 @@ const App: React.FC = () => {
       />
       
       <main className="flex-1 pt-32 md:pt-44">
-        {fetchError && (
-          <div className="max-w-xl mx-auto mt-20 p-6 bg-red-50 border border-red-100 rounded-lg text-center">
-            <h3 className="text-red-800 font-bold mb-2">Connection Error</h3>
-            <p className="text-red-600 text-sm mb-4">{fetchError}</p>
+        {fetchError ? (
+          <div className="max-w-xl mx-auto mt-20 p-8 text-center animate-fadeIn">
+            <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            <h3 className="text-xl font-serif italic text-slate-800 mb-2">Something went wrong</h3>
+            <p className="text-slate-500 text-sm mb-8 font-light">{fetchError}</p>
             <button 
               onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-red-600 text-white text-xs font-bold uppercase tracking-widest rounded"
+              className="px-8 py-3 bg-[#2C3468] text-white text-[10px] uppercase font-bold tracking-widest shadow-xl"
             >
-              Retry Connection
+              Reload Experience
             </button>
           </div>
-        )}
-
-        {isLoading && products.length === 0 && !fetchError ? (
+        ) : isLoading && products.length === 0 ? (
           <div className="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center">
-            <div className="w-16 h-16 border-b-2 border-[#2C3468] rounded-full animate-spin mb-6"></div>
-            <p className="text-[10px] uppercase tracking-[0.4em] font-black text-[#2C3468]">Syncing ISA Catalog</p>
+            <div className="w-12 h-12 border-t-2 border-[#2C3468] rounded-full animate-spin mb-6"></div>
+            <p className="text-[10px] uppercase tracking-[0.5em] font-black text-[#2C3468] animate-pulse">Initializing Atelier</p>
           </div>
         ) : (
           <div key={currentRoute} className="animate-fadeIn">
