@@ -32,20 +32,16 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
     }
   }, [product]);
 
-  // Size selection - Fast feedback
+  // Size Selection: Absolute 0ms Latency
   const handleSizeSelect = (size: string) => {
     setSelectedSize(size);
   };
 
-  // Add to cart - Direct and persistent
-  const handleAddToCart = useCallback((e: React.MouseEvent) => {
-    // Note: Removed preventDefault to allow standard tap behavior
+  // Secure to Bag: High Priority Handler (No 'disabled' attribute to prevent mobile event cancellation)
+  const handleAddToCart = useCallback(() => {
     if (!product || btnStatus !== 'idle') return;
     
-    // 1. Visual trigger
-    setBtnStatus('adding');
-    
-    // 2. Immediate Logic execution
+    // 1. Trigger internal logic immediately
     onAddToCart({
       productId: product.id,
       title: product.title,
@@ -56,10 +52,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
       quantity: 1
     });
 
-    // 3. UI Status progression
+    // 2. Reflect visual state
+    setBtnStatus('adding');
+    
     const timer = setTimeout(() => {
       setBtnStatus('success');
-      setTimeout(() => setBtnStatus('idle'), 2000);
+      setTimeout(() => setBtnStatus('idle'), 1800);
     }, 400);
 
     return () => clearTimeout(timer);
@@ -73,25 +71,26 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
         <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400 mb-10 max-w-xs leading-loose">
           The requested item has been moved or is currently unavailable in our digital archive.
         </p>
-        <button onClick={() => window.location.hash = '#/shop'} className="text-[10px] font-black uppercase tracking-widest text-[#2C3468] border-b border-[#2C3468] pb-1 active:opacity-50">Return to Shop</button>
+        <button onClick={() => window.location.hash = '#/shop'} className="text-[10px] font-black uppercase tracking-widest text-[#2C3468] border-b border-[#2C3468] pb-1">Return to Shop</button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-12 py-8 md:py-16 animate-fadeIn">
+    <div className="max-w-7xl mx-auto px-4 md:px-12 py-8 md:py-16 animate-fadeIn relative z-10">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-20">
         
-        {/* Left: Gallery */}
+        {/* Gallery Section */}
         <div className="lg:col-span-7 space-y-4 lg:sticky lg:top-44 h-fit">
-          <div className="aspect-[4/5] bg-slate-50 overflow-hidden rounded-sm relative group shadow-sm">
+          <div className="aspect-[4/5] bg-slate-50 overflow-hidden rounded-sm relative group shadow-sm border border-slate-50">
             <img 
               src={product.images[activeImage]} 
               className="w-full h-full object-cover" 
               alt={product.title} 
+              loading="eager"
             />
             {product.stock < 10 && (
-              <div className="absolute top-6 left-6 bg-white/95 backdrop-blur-md px-4 py-2 text-[9px] uppercase font-black tracking-widest shadow-xl text-red-600 border border-red-50">Rare Stock</div>
+              <div className="absolute top-6 left-6 bg-white/95 backdrop-blur-md px-4 py-2 text-[9px] uppercase font-black tracking-widest shadow-xl text-red-600 border border-red-50">Rare Archival Piece</div>
             )}
           </div>
           <div className="grid grid-cols-4 gap-3 md:gap-5 overflow-x-auto pb-4 scrollbar-hide">
@@ -99,7 +98,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
               <button 
                 key={idx} 
                 onClick={() => setActiveImage(idx)} 
-                className={`aspect-[3/4] border-b-2 transition-all flex-shrink-0 min-w-[70px] ${activeImage === idx ? 'border-[#2C3468] opacity-100' : 'border-transparent opacity-30 active:opacity-100'}`}
+                className={`aspect-[3/4] border-b-2 transition-opacity flex-shrink-0 min-w-[70px] ${activeImage === idx ? 'border-[#2C3468] opacity-100' : 'border-transparent opacity-30 active:opacity-100'}`}
               >
                 <img src={img} className="w-full h-full object-cover" alt="thumbnail" loading="lazy" />
               </button>
@@ -107,8 +106,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
           </div>
         </div>
 
-        {/* Right: Info */}
-        <div className="lg:col-span-5 flex flex-col space-y-12">
+        {/* Info & Interaction Panel */}
+        <div className="lg:col-span-5 flex flex-col space-y-12 relative z-20">
           <div className="space-y-4">
             <div className="flex items-center gap-4">
                <span className="text-[9px] md:text-[10px] uppercase tracking-[0.5em] font-black text-slate-300">{product.category}</span>
@@ -119,11 +118,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
           </div>
 
           <div className="space-y-12">
-            {/* Size - Enhanced Mobile Hit Area */}
+            {/* Dimension Selection - Enhanced Touch Areas */}
             <div className="space-y-5">
               <div className="flex justify-between items-center">
                 <label className="text-[10px] uppercase font-black tracking-super-wide text-slate-400">Dimensions</label>
-                <button className="text-[8px] uppercase font-bold tracking-widest text-[#2C3468] underline underline-offset-4 active:opacity-50">Size Guide</button>
+                <button className="text-[8px] uppercase font-bold tracking-widest text-[#2C3468] underline underline-offset-4">Size Guide</button>
               </div>
               <div className="grid grid-cols-4 gap-3">
                 {product.sizes.map(size => (
@@ -131,7 +130,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
                     key={size} 
                     type="button"
                     onClick={() => handleSizeSelect(size)} 
-                    className={`py-4 text-[11px] font-black border transition-colors duration-150 active:scale-95 ${selectedSize === size ? 'bg-[#2C3468] text-white border-[#2C3468] shadow-md' : 'border-slate-100 text-slate-400'}`}
+                    className={`py-5 text-[11px] font-black border transition-none active:scale-[0.96] active:bg-slate-50 ${selectedSize === size ? 'bg-[#2C3468] text-white border-[#2C3468] shadow-md z-10' : 'bg-white border-slate-100 text-slate-400'}`}
                   >
                     {size}
                   </button>
@@ -139,7 +138,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
               </div>
             </div>
 
-            {/* Color */}
+            {/* Shade Selection */}
             <div className="space-y-5">
               <label className="text-[10px] uppercase font-black tracking-super-wide text-slate-400">Archival Shade — <span className="text-[#2C3468] font-black">{selectedColor}</span></label>
               <div className="flex gap-5">
@@ -148,7 +147,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
                     key={color.name} 
                     type="button"
                     onClick={() => setSelectedColor(color.name)} 
-                    className={`w-12 h-12 rounded-full border-2 p-1 transition-all duration-300 transform active:scale-90 ${selectedColor === color.name ? 'border-[#2C3468] scale-110 shadow-md' : 'border-transparent'}`}
+                    className={`w-12 h-12 rounded-full border-2 p-1 transition-none transform active:scale-90 ${selectedColor === color.name ? 'border-[#2C3468] scale-110 shadow-lg' : 'border-transparent'}`}
                   >
                     <div className="w-full h-full rounded-full shadow-inner border border-black/5" style={{ backgroundColor: color.hex }}></div>
                   </button>
@@ -156,14 +155,13 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
               </div>
             </div>
 
-            {/* SECURE TO BAG BUTTON - Absolute Reliability */}
+            {/* BAG ACTION BUTTON - Reinforced Hit Area */}
             <div className="pt-6">
               <button 
                 type="button"
                 onClick={handleAddToCart} 
-                disabled={btnStatus !== 'idle'} 
-                className={`relative w-full py-7 md:py-8 text-[11px] font-black uppercase tracking-[0.4em] transition-all duration-500 overflow-hidden rounded-sm flex items-center justify-center select-none shadow-xl border
-                  ${btnStatus === 'idle' ? 'bg-[#2C3468] text-white border-[#2C3468] active:scale-[0.97] active:bg-black' : ''}
+                className={`relative w-full py-7 md:py-8 text-[11px] font-black uppercase tracking-[0.4em] transition-all duration-300 overflow-hidden rounded-sm flex items-center justify-center select-none shadow-xl border cursor-pointer z-30
+                  ${btnStatus === 'idle' ? 'bg-[#2C3468] text-white border-[#2C3468] active:scale-[0.98] active:bg-black' : ''}
                   ${btnStatus === 'adding' ? 'bg-[#2C3468] text-white border-[#2C3468] opacity-90' : ''}
                   ${btnStatus === 'success' ? 'bg-emerald-800 text-white border-emerald-800' : ''}
                 `}
@@ -178,13 +176,13 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
                   {btnStatus === 'adding' && (
                     <>
                       <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                      <span>Processing...</span>
+                      <span>Authorizing...</span>
                     </>
                   )}
                   {btnStatus === 'success' && (
                     <>
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3.5" d="M5 13l4 4L19 7" /></svg>
-                      <span>Secured</span>
+                      <span>Item Secured</span>
                     </>
                   )}
                 </div>
