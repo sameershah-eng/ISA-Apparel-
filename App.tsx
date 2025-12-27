@@ -22,11 +22,9 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Cart Feedback Notification
   const [lastAddedItem, setLastAddedItem] = useState<CartItem | null>(null);
   const [showNotification, setShowNotification] = useState(false);
 
-  // Global Filter State
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
 
@@ -56,7 +54,6 @@ const App: React.FC = () => {
               : (p.categories.name || 'Uncategorized');
           }
           
-          // CRITICAL: Stable slug generation ensures URL matches lookup
           const generatedSlug = p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + p.id.slice(0, 5);
           const slug = p.slug || generatedSlug;
           
@@ -110,28 +107,32 @@ const App: React.FC = () => {
   }, []);
 
   const addToCart = (newItemData: Omit<CartItem, 'id'>) => {
-    const existingIndex = cartItems.findIndex(item => 
-      item.productId === newItemData.productId && 
-      item.size === newItemData.size && 
-      item.color === newItemData.color
-    );
+    setCartItems(prevItems => {
+      const existingIndex = prevItems.findIndex(item => 
+        item.productId === newItemData.productId && 
+        item.size === newItemData.size && 
+        item.color === newItemData.color
+      );
 
-    let finalItem: CartItem;
+      let finalItems;
+      let addedItem: CartItem;
 
-    if (existingIndex > -1) {
-      const updated = [...cartItems];
-      updated[existingIndex].quantity += 1;
-      finalItem = updated[existingIndex];
-      setCartItems(updated);
-    } else {
-      const newItem = { ...newItemData, id: Math.random().toString(36).substr(2, 9) };
-      finalItem = newItem;
-      setCartItems([...cartItems, newItem]);
-    }
+      if (existingIndex > -1) {
+        finalItems = prevItems.map((item, idx) => 
+          idx === existingIndex ? { ...item, quantity: item.quantity + 1 } : item
+        );
+        addedItem = finalItems[existingIndex];
+      } else {
+        addedItem = { ...newItemData, id: Math.random().toString(36).substr(2, 9) };
+        finalItems = [...prevItems, addedItem];
+      }
 
-    setLastAddedItem(finalItem);
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 3500);
+      setLastAddedItem(addedItem);
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3500);
+
+      return finalItems;
+    });
   };
 
   const updateQuantity = (id: string, delta: number) => {
@@ -148,7 +149,7 @@ const App: React.FC = () => {
     const path = currentRoute.split('?')[0]; 
     if (isLoading && products.length === 0) return (
       <div className="h-[60vh] flex items-center justify-center">
-        <div className="w-10 h-10 border-t-2 border-[#2C3468] rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-t-2 border-[#2C3468] rounded-full animate-spin"></div>
       </div>
     );
 
@@ -184,7 +185,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col selection:bg-[#2C3468] selection:text-white">
+    <div className="min-h-screen flex flex-col selection:bg-[#2C3468] selection:text-white overflow-x-hidden">
       <Header 
         onCartClick={() => setIsCartOpen(true)} 
         cartCount={cartItems.reduce((acc, item) => acc + item.quantity, 0)} 
@@ -217,7 +218,7 @@ const App: React.FC = () => {
              <img src={lastAddedItem?.image} className="w-full h-full object-cover rounded-sm" alt="" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[8px] uppercase tracking-widest font-black opacity-60 mb-1">Article Secured</p>
+            <p className="text-[8px] uppercase tracking-widest font-black opacity-60 mb-1">Secured</p>
             <h4 className="text-[10px] font-bold uppercase truncate pr-4">{lastAddedItem?.title}</h4>
             <button onClick={() => { setIsCartOpen(true); setShowNotification(false); }} className="text-[9px] uppercase tracking-widest font-bold border-b border-white/20 hover:border-white mt-2 transition-all inline-block">View Bag</button>
           </div>
