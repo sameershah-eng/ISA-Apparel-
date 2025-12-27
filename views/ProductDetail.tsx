@@ -41,13 +41,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
     }
   }, [product]);
 
-  // VITAL FIX: High-Priority Touch Handler for Mobile
-  const handleAddToCart = useCallback((e: React.MouseEvent) => {
-    // We handle the 'adding' state internally without disabling the button element.
-    // This prevents mobile browsers from cancelling the 'click' event mid-tap.
+  // VITAL FIX: Robust Handler for Mobile
+  const handleAddToCart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    // Prevent accidental double taps or parent triggers
+    if (e.cancelable) e.preventDefault();
+    e.stopPropagation();
+
     if (!product || btnStatus !== 'idle') return;
     
-    // Immediate Visual & Logic Activation
+    // Immediate Visual Feedback
     setBtnStatus('adding');
     
     const itemTitle = isBespoke ? `${product.title} (Bespoke)` : product.title;
@@ -187,12 +189,13 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
             </div>
 
             {/* VITAL ACTION: SECURE TO BAG */}
-            <div className="pt-4 relative z-30">
+            <div className="pt-4 relative z-50">
               <button 
+                type="button"
                 onClick={handleAddToCart}
-                className={`w-full py-6 md:py-8 text-[11px] font-black uppercase tracking-[0.4em] rounded-sm shadow-2xl transition-all duration-300 flex items-center justify-center gap-4 active:scale-95 touch-manipulation cursor-pointer
-                  ${btnStatus === 'idle' ? 'bg-[#2C3468] text-white' : ''}
-                  ${btnStatus === 'adding' ? 'bg-[#2C3468] text-white opacity-80' : ''}
+                className={`w-full min-h-[64px] py-6 md:py-8 text-[11px] font-black uppercase tracking-[0.4em] rounded-sm shadow-2xl transition-all duration-200 flex items-center justify-center gap-4 touch-manipulation cursor-pointer
+                  ${btnStatus === 'idle' ? 'bg-[#2C3468] text-white hover:bg-black' : ''}
+                  ${btnStatus === 'adding' ? 'bg-[#2C3468] text-white opacity-80 cursor-wait' : ''}
                   ${btnStatus === 'success' ? 'bg-emerald-700 text-white' : ''}
                 `}
               >

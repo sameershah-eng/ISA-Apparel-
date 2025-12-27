@@ -32,12 +32,13 @@
             transform: translateY(10px);
             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
             will-change: opacity, transform;
-            /* CRITICAL FIX: Ensure elements are always interactable */
-            pointer-events: auto !important;
+            /* Prevent invisible elements from blocking interaction */
+            pointer-events: none;
         }
         .reveal.active {
             opacity: 1;
             transform: translateY(0);
+            pointer-events: auto;
         }
 
         @keyframes fadeIn {
