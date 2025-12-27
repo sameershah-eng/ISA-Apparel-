@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
@@ -21,6 +21,10 @@ const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Global Filter State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
 
   useEffect(() => {
     const fetchCatalog = async () => {
@@ -122,6 +126,15 @@ const App: React.FC = () => {
     setCartItems(prev => prev.filter(item => item.id !== id));
   };
 
+  const filteredProducts = useMemo(() => {
+    return products.filter(p => {
+      const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            p.category.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = activeCategory === 'All' || p.category === activeCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchQuery, activeCategory]);
+
   const renderView = () => {
     const path = currentRoute.split('?')[0]; 
     if (isLoading && products.length === 0) return <div className="h-screen" />;
@@ -131,7 +144,15 @@ const App: React.FC = () => {
       case '':
         return <Home products={products} />;
       case '#/shop':
-        return <Shop products={products} />;
+        return (
+          <Shop 
+            products={products} 
+            externalSearch={searchQuery} 
+            onSearchChange={setSearchQuery}
+            externalCategory={activeCategory}
+            onCategoryChange={setActiveCategory}
+          />
+        );
       case '#/fabrics':
         return <Fabrics products={products} />;
       case '#/tailoring':
@@ -154,8 +175,13 @@ const App: React.FC = () => {
       <Header 
         onCartClick={() => setIsCartOpen(true)} 
         cartCount={cartItems.reduce((acc, item) => acc + item.quantity, 0)} 
+        products={products}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        activeCategory={activeCategory}
+        setActiveCategory={setActiveCategory}
       />
-      <main className="flex-1 pt-32 md:pt-44">
+      <main className="flex-1 pt-[80px] md:pt-44">
         {fetchError ? (
           <div className="max-w-xl mx-auto mt-20 p-8 text-center animate-fadeIn">
             <h3 className="text-xl font-serif italic text-slate-800 mb-2">Service Offline</h3>
