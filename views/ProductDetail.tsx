@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Product, CartItem } from '../types';
 
 interface ProductDetailProps {
@@ -11,7 +11,6 @@ interface ProductDetailProps {
 type ButtonStatus = 'idle' | 'adding' | 'success';
 
 const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCart }) => {
-  // CRITICAL: Robust case-insensitive lookup with decoded URL slug
   const product = useMemo(() => {
     const decodedSlug = decodeURIComponent(slug).toLowerCase();
     return products.find(p => 
@@ -29,28 +28,17 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
     if (product) {
       setSelectedSize(product.sizes[0] || '32');
       setSelectedColor(product.colors[0]?.name || 'Midnight');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [product]);
 
-  if (!product) {
-    return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center p-8 text-center animate-fadeIn">
-        <div className="w-px h-16 bg-slate-200 mb-8"></div>
-        <h2 className="text-3xl font-serif italic text-slate-800 mb-4">Article Not Found</h2>
-        <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400 mb-10 max-w-xs leading-loose">
-          The requested item has been moved or is currently unavailable in our digital archive.
-        </p>
-        <a href="#/shop" className="text-[10px] font-black uppercase tracking-widest text-[#2C3468] border-b border-[#2C3468] pb-1 hover:opacity-60 transition-opacity">Return to Collection</a>
-      </div>
-    );
-  }
-
-  const handleAddToCart = () => {
-    if (btnStatus !== 'idle') return;
+  const handleAddToCart = useCallback(() => {
+    if (!product || btnStatus !== 'idle') return;
+    
+    // Instant visual feedback
     setBtnStatus('adding');
     
-    setTimeout(() => {
+    // Rapid processing to maintain elegance
+    const timer = setTimeout(() => {
       onAddToCart({
         productId: product.id,
         title: product.title,
@@ -61,9 +49,24 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
         quantity: 1
       });
       setBtnStatus('success');
-      setTimeout(() => setBtnStatus('idle'), 2500);
-    }, 1000);
-  };
+      setTimeout(() => setBtnStatus('idle'), 2000);
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [product, selectedSize, selectedColor, btnStatus, onAddToCart]);
+
+  if (!product) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center p-8 text-center animate-fadeIn">
+        <div className="w-px h-16 bg-slate-200 mb-8"></div>
+        <h2 className="text-3xl font-serif italic text-slate-800 mb-4">Article Unretrievable</h2>
+        <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400 mb-10 max-w-xs leading-loose">
+          The requested item has been moved or is currently unavailable in our digital archive.
+        </p>
+        <button onClick={() => window.location.hash = '#/shop'} className="text-[10px] font-black uppercase tracking-widest text-[#2C3468] border-b border-[#2C3468] pb-1 active:opacity-40">Return to Shop</button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-12 py-8 md:py-16 animate-fadeIn">
@@ -71,14 +74,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
         
         {/* Left: Gallery */}
         <div className="lg:col-span-7 space-y-4 lg:sticky lg:top-44 h-fit">
-          <div className="aspect-[4/5] bg-slate-50 overflow-hidden rounded-sm relative group cursor-crosshair">
+          <div className="aspect-[4/5] bg-slate-50 overflow-hidden rounded-sm relative group">
             <img 
               src={product.images[activeImage]} 
-              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
+              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" 
               alt={product.title} 
             />
             {product.stock < 10 && (
-              <div className="absolute top-6 left-6 bg-white px-4 py-2 text-[9px] uppercase font-black tracking-widest shadow-2xl text-red-600 border border-red-50">Limited Stock</div>
+              <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-md px-4 py-2 text-[9px] uppercase font-black tracking-widest shadow-xl text-red-600 border border-red-50">Rare Stock</div>
             )}
           </div>
           <div className="grid grid-cols-4 gap-3 md:gap-5 overflow-x-auto pb-2 scrollbar-hide">
@@ -86,9 +89,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
               <button 
                 key={idx} 
                 onClick={() => setActiveImage(idx)} 
-                className={`aspect-[3/4] border-b-2 transition-all flex-shrink-0 min-w-[80px] ${activeImage === idx ? 'border-[#2C3468] opacity-100' : 'border-transparent opacity-30 hover:opacity-60'}`}
+                className={`aspect-[3/4] border-b-2 transition-all flex-shrink-0 min-w-[70px] ${activeImage === idx ? 'border-[#2C3468] opacity-100' : 'border-transparent opacity-30 active:opacity-100'}`}
               >
-                <img src={img} className="w-full h-full object-cover" alt="thumbnail" />
+                <img src={img} className="w-full h-full object-cover" alt="thumbnail" loading="lazy" />
               </button>
             ))}
           </div>
@@ -102,22 +105,22 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
                <div className="h-px flex-1 bg-slate-100"></div>
             </div>
             <h1 className="text-4xl md:text-6xl font-serif italic text-slate-900 leading-tight">{product.title}</h1>
-            <p className="text-2xl md:text-3xl font-light text-[#2C3468] tabular-nums">${product.price.toFixed(2)}</p>
+            <p className="text-2xl md:text-3xl font-light text-[#2C3468] tabular-nums tracking-tighter">${product.price.toFixed(2)}</p>
           </div>
 
           <div className="space-y-12">
             {/* Size */}
             <div className="space-y-5">
               <div className="flex justify-between items-center">
-                <label className="text-[10px] uppercase font-black tracking-super-wide text-slate-400">Size Selection</label>
-                <button className="text-[8px] uppercase font-bold tracking-widest text-[#2C3468] underline underline-offset-4">Size Guide</button>
+                <label className="text-[10px] uppercase font-black tracking-super-wide text-slate-400">Dimension Selection</label>
+                <button className="text-[8px] uppercase font-bold tracking-widest text-[#2C3468] underline underline-offset-4 active:opacity-40">Size Guide</button>
               </div>
               <div className="grid grid-cols-4 gap-3">
                 {product.sizes.map(size => (
                   <button 
                     key={size} 
                     onClick={() => setSelectedSize(size)} 
-                    className={`py-4 text-[11px] font-black border transition-all duration-500 ${selectedSize === size ? 'bg-[#2C3468] text-white border-[#2C3468] shadow-lg' : 'border-slate-100 hover:border-slate-300 text-slate-400'}`}
+                    className={`py-4 text-[11px] font-black border transition-all duration-300 active:scale-95 ${selectedSize === size ? 'bg-[#2C3468] text-white border-[#2C3468] shadow-lg' : 'border-slate-100 hover:border-slate-300 text-slate-400'}`}
                   >
                     {size}
                   </button>
@@ -128,12 +131,12 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
             {/* Color */}
             <div className="space-y-5">
               <label className="text-[10px] uppercase font-black tracking-super-wide text-slate-400">Shade — <span className="text-[#2C3468] font-black">{selectedColor}</span></label>
-              <div className="flex gap-6">
+              <div className="flex gap-5">
                 {product.colors.map(color => (
                   <button 
                     key={color.name} 
                     onClick={() => setSelectedColor(color.name)} 
-                    className={`w-14 h-14 rounded-full border-2 p-1.5 transition-all duration-700 transform hover:scale-110 ${selectedColor === color.name ? 'border-[#2C3468] scale-110 shadow-xl' : 'border-transparent hover:border-slate-200'}`}
+                    className={`w-12 h-12 rounded-full border-2 p-1 transition-all duration-500 transform active:scale-75 ${selectedColor === color.name ? 'border-[#2C3468] scale-110 shadow-lg' : 'border-transparent hover:border-slate-200'}`}
                   >
                     <div className="w-full h-full rounded-full shadow-inner border border-black/5" style={{ backgroundColor: color.hex }}></div>
                   </button>
@@ -141,15 +144,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
               </div>
             </div>
 
-            {/* Animated Button */}
+            {/* Premium Interactive Button */}
             <div className="pt-6">
               <button 
                 onClick={handleAddToCart} 
                 disabled={btnStatus !== 'idle'} 
-                className={`relative group w-full py-7 md:py-8 text-[11px] font-black uppercase tracking-[0.4em] transition-all duration-1000 overflow-hidden rounded-sm flex items-center justify-center
-                  ${btnStatus === 'idle' ? 'bg-[#2C3468] text-white hover:bg-black shadow-2xl active:scale-[0.96]' : ''}
-                  ${btnStatus === 'adding' ? 'bg-[#2C3468] text-white cursor-wait' : ''}
-                  ${btnStatus === 'success' ? 'bg-emerald-700 text-white' : ''}
+                className={`relative group w-full py-7 md:py-8 text-[11px] font-black uppercase tracking-[0.4em] transition-all duration-700 overflow-hidden rounded-sm flex items-center justify-center
+                  ${btnStatus === 'idle' ? 'bg-[#2C3468] text-white shadow-2xl active:scale-[0.96] active:bg-black' : ''}
+                  ${btnStatus === 'adding' ? 'bg-[#2C3468] text-white cursor-wait opacity-80' : ''}
+                  ${btnStatus === 'success' ? 'bg-emerald-800 text-white' : ''}
                 `}
               >
                 <div className="relative flex items-center gap-5">
@@ -167,8 +170,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
                   )}
                   {btnStatus === 'success' && (
                     <>
-                      <svg className="w-5 h-5 animate-[checkPop_0.6s_ease-out]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3.5" d="M5 13l4 4L19 7" /></svg>
-                      <span className="animate-[slideUp_0.4s_ease-out]">Item Secured</span>
+                      <svg className="w-5 h-5 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3.5" d="M5 13l4 4L19 7" /></svg>
+                      <span>Item Secured</span>
                     </>
                   )}
                 </div>
@@ -192,25 +195,13 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
                 </div>
                 <div>
                    <p className="text-[8px] uppercase tracking-widest text-slate-300 font-black mb-1">Care</p>
-                   <p className="text-[10px] font-bold text-[#2C3468]">Dry Clean Only</p>
+                   <p className="text-[10px] font-bold text-[#2C3468]">Dry Clean</p>
                 </div>
              </div>
              <p className="text-xs text-slate-400 font-light leading-relaxed italic">{product.longDescription}</p>
           </div>
         </div>
       </div>
-      
-      <style>{`
-        @keyframes checkPop {
-          0% { transform: scale(0.4); opacity: 0; }
-          70% { transform: scale(1.3); }
-          100% { transform: scale(1); opacity: 1; }
-        }
-        @keyframes slideUp {
-          0% { transform: translateY(15px); opacity: 0; }
-          100% { transform: translateY(0); opacity: 1; }
-        }
-      `}</style>
     </div>
   );
 };

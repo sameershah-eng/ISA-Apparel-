@@ -15,41 +15,41 @@ import ChatBot from './components/ChatBot';
 import { supabase } from './lib/supabaseClient';
 
 const App: React.FC = () => {
-  const [currentRoute, setCurrentRoute] = useState(window.location.hash || '#/');
+  const [currentRoute, setCurrentRoute] = useState(() => window.location.hash || '#/');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Persistence: Initialize cart from localStorage
+  // Persistence: Initialize cart from localStorage immediately on mount
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     try {
-      const saved = localStorage.getItem('isa-cart-v1');
+      const saved = localStorage.getItem('isa_cart_archive_v2');
       return saved ? JSON.parse(saved) : [];
     } catch (e) {
+      console.warn("Cart restoration failed", e);
       return [];
     }
   });
 
   const [lastAddedItem, setLastAddedItem] = useState<CartItem | null>(null);
   const [showNotification, setShowNotification] = useState(false);
-
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('isa-cart-v1', JSON.stringify(cartItems));
+    localStorage.setItem('isa_cart_archive_v2', JSON.stringify(cartItems));
   }, [cartItems]);
 
-  // Global Scroll Reveal System
+  // High-Performance Scroll Reveal System
   useEffect(() => {
-    const observerOptions = { threshold: 0.1, rootMargin: "0px 0px -50px 0px" };
+    const observerOptions = { threshold: 0.05, rootMargin: "0px 0px -20px 0px" };
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('active');
-          observer.unobserve(entry.target); // Performance: stop observing once revealed
+          observer.unobserve(entry.target); // Efficiency: Stop observing once active
         }
       });
     }, observerOptions);
@@ -57,9 +57,9 @@ const App: React.FC = () => {
     const elements = document.querySelectorAll('.reveal');
     elements.forEach(el => observer.observe(el));
     return () => observer.disconnect();
-  }, [currentRoute, products]);
+  }, [currentRoute, products, isLoading]);
 
-  // Database Fetching - Optimized for speed
+  // Database Fetching - Optimized for speed and retry logic
   useEffect(() => {
     const fetchCatalog = async () => {
       try {
@@ -79,7 +79,7 @@ const App: React.FC = () => {
         const transformed: Product[] = (dbProducts || []).map(p => {
           let categoryName = 'Uncategorized';
           if (p.categories) {
-            categoryName = Array.isArray(p.categories) ? p.categories[0]?.name : p.categories.name;
+            categoryName = Array.isArray(p.categories) ? (p.categories[0]?.name || 'Uncategorized') : (p.categories.name || 'Uncategorized');
           }
           const slug = p.slug || (p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + p.id.slice(0, 5));
           
@@ -87,7 +87,7 @@ const App: React.FC = () => {
             id: p.id,
             slug,
             title: p.title || 'Untitled Article',
-            category: categoryName || 'Uncategorized',
+            category: categoryName,
             price: p.price ? parseFloat(p.price.toString()) : 0,
             description: p.description || '',
             longDescription: p.long_description || '',
@@ -111,7 +111,7 @@ const App: React.FC = () => {
 
         setProducts(transformed);
       } catch (err: any) {
-        setFetchError(err.message || 'Service temporarily unavailable.');
+        setFetchError(err.message || 'The archive is temporarily offline.');
       } finally {
         setIsLoading(false);
       }
@@ -119,35 +119,38 @@ const App: React.FC = () => {
     fetchCatalog();
   }, []);
 
-  // Hash Routing
+  // Centralized Navigation Hub for Mobile Stability
   useEffect(() => {
     const handleHashChange = () => {
       const newHash = window.location.hash || '#/';
       setCurrentRoute(newHash);
       window.scrollTo({ top: 0, behavior: 'instant' });
+      // Ensure UI states reset on any route change
+      setIsCartOpen(false);
     };
-    window.addEventListener('hashchange', handleHashChange);
+    window.addEventListener('hashchange', handleHashChange, { passive: true });
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
   const addToCart = useCallback((newItemData: Omit<CartItem, 'id'>) => {
-    setCartItems(prevItems => {
-      const existingIndex = prevItems.findIndex(item => 
+    setCartItems(prev => {
+      const existingIdx = prev.findIndex(item => 
         item.productId === newItemData.productId && 
         item.size === newItemData.size && 
         item.color === newItemData.color
       );
 
-      if (existingIndex > -1) {
-        const updated = [...prevItems];
-        updated[existingIndex] = { ...updated[existingIndex], quantity: updated[existingIndex].quantity + 1 };
-        setLastAddedItem(updated[existingIndex]);
-        return updated;
+      let finalItems;
+      if (existingIdx > -1) {
+        finalItems = [...prev];
+        finalItems[existingIdx] = { ...finalItems[existingIdx], quantity: finalItems[existingIdx].quantity + 1 };
+        setLastAddedItem(finalItems[existingIdx]);
       } else {
         const newItem = { ...newItemData, id: Math.random().toString(36).substr(2, 9) };
+        finalItems = [...prev, newItem];
         setLastAddedItem(newItem);
-        return [...prevItems, newItem];
       }
+      return finalItems;
     });
     setShowNotification(true);
     setTimeout(() => setShowNotification(false), 3000);
@@ -166,25 +169,20 @@ const App: React.FC = () => {
   const renderView = () => {
     const path = currentRoute.split('?')[0]; 
     if (isLoading && products.length === 0) return (
-      <div className="h-[70vh] flex items-center justify-center">
-        <div className="w-6 h-6 border-t-2 border-[#2C3468] rounded-full animate-spin"></div>
+      <div className="h-[60vh] flex flex-col items-center justify-center space-y-4">
+        <div className="w-8 h-8 border-t-2 border-[#2C3468] rounded-full animate-spin"></div>
+        <p className="text-[9px] uppercase tracking-super-wide text-slate-300 font-bold">Accessing Archive</p>
       </div>
     );
 
     switch (path) {
       case '#/':
-      case '':
-        return <Home products={products} />;
-      case '#/shop':
-        return <Shop products={products} externalSearch={searchQuery} onSearchChange={setSearchQuery} externalCategory={activeCategory} onCategoryChange={setActiveCategory} />;
-      case '#/fabrics':
-        return <Fabrics products={products} />;
-      case '#/tailoring':
-        return <Tailoring products={products} />;
-      case '#/accessories':
-        return <Accessories products={products} />;
-      case '#/checkout':
-        return <Checkout cartItems={cartItems} />;
+      case '': return <Home products={products} />;
+      case '#/shop': return <Shop products={products} externalSearch={searchQuery} onSearchChange={setSearchQuery} externalCategory={activeCategory} onCategoryChange={setActiveCategory} />;
+      case '#/fabrics': return <Fabrics products={products} />;
+      case '#/tailoring': return <Tailoring products={products} />;
+      case '#/accessories': return <Accessories products={products} />;
+      case '#/checkout': return <Checkout cartItems={cartItems} />;
       default:
         if (path.startsWith('#/product/')) {
           const slug = path.replace('#/product/', '');
@@ -195,7 +193,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col selection:bg-[#2C3468] selection:text-white overflow-x-hidden bg-white">
+    <div className="min-h-screen flex flex-col selection:bg-[#2C3468] selection:text-white bg-white antialiased">
       <Header 
         onCartClick={() => setIsCartOpen(true)} 
         cartCount={cartItems.reduce((acc, item) => acc + item.quantity, 0)} 
@@ -207,12 +205,12 @@ const App: React.FC = () => {
         isAddingToCart={showNotification}
       />
       
-      <main className="flex-1 pt-[60px] md:pt-[100px]">
+      <main className="flex-1 pt-[60px] md:pt-[110px]">
         {fetchError ? (
-          <div className="max-w-xl mx-auto mt-20 p-8 text-center">
-            <h3 className="text-xl font-serif italic text-slate-800 mb-2">Network Archive Offline</h3>
-            <p className="text-slate-500 text-[10px] uppercase tracking-widest mb-8">{fetchError}</p>
-            <button onClick={() => window.location.reload()} className="px-8 py-3 bg-[#2C3468] text-white text-[10px] uppercase font-bold tracking-widest">Retry Connection</button>
+          <div className="max-w-xl mx-auto mt-20 p-8 text-center animate-fadeIn">
+            <h3 className="text-xl font-serif italic text-slate-800 mb-2">Connection Interrupted</h3>
+            <p className="text-slate-400 text-[10px] uppercase tracking-widest mb-8">{fetchError}</p>
+            <button onClick={() => window.location.reload()} className="px-10 py-4 bg-[#2C3468] text-white text-[10px] uppercase font-black tracking-[0.3em] shadow-xl">Reconnect</button>
           </div>
         ) : (
           <div className="animate-fadeIn">
@@ -221,15 +219,16 @@ const App: React.FC = () => {
         )}
       </main>
 
+      {/* Persistence Notification */}
       <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:top-24 md:bottom-auto md:right-8 z-[110] w-[92%] md:w-80 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${showNotification ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
-        <div className="bg-[#2C3468] text-white p-3 md:p-4 shadow-2xl rounded-sm flex gap-4 items-center backdrop-blur-lg">
+        <div className="bg-[#2C3468] text-white p-3 md:p-4 shadow-2xl rounded-sm flex gap-4 items-center backdrop-blur-xl border border-white/5">
           <div className="w-10 h-14 bg-white/10 flex-shrink-0">
              <img src={lastAddedItem?.image} className="w-full h-full object-cover" alt="" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[7px] uppercase tracking-widest font-black opacity-60">Article Secured</p>
+            <p className="text-[7px] uppercase tracking-widest font-black opacity-60">Archive Updated</p>
             <h4 className="text-[9px] font-bold uppercase truncate">{lastAddedItem?.title}</h4>
-            <button onClick={() => { setIsCartOpen(true); setShowNotification(false); }} className="text-[8px] uppercase tracking-widest font-bold border-b border-white/20 hover:border-white mt-1.5 inline-block">View Bag</button>
+            <button onClick={() => setIsCartOpen(true)} className="text-[8px] uppercase tracking-widest font-bold border-b border-white/20 mt-1.5 inline-block hover:border-white transition-all">Review Bag</button>
           </div>
         </div>
       </div>
