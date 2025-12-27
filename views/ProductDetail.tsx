@@ -28,29 +28,34 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
     if (product) {
       setSelectedSize(product.sizes[0] || '32');
       setSelectedColor(product.colors[0]?.name || 'Midnight');
+      window.scrollTo({ top: 0, behavior: 'instant' });
     }
   }, [product]);
 
-  const handleAddToCart = useCallback(() => {
+  const handleAddToCart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (!product || btnStatus !== 'idle') return;
     
-    // Instant visual feedback
+    // Explicitly set state and trigger callback
     setBtnStatus('adding');
     
-    // Rapid processing to maintain elegance
+    // Slight delay for animation but immediate logic execution
+    onAddToCart({
+      productId: product.id,
+      title: product.title,
+      price: product.price,
+      image: product.images[0],
+      size: selectedSize,
+      color: selectedColor,
+      quantity: 1
+    });
+
     const timer = setTimeout(() => {
-      onAddToCart({
-        productId: product.id,
-        title: product.title,
-        price: product.price,
-        image: product.images[0],
-        size: selectedSize,
-        color: selectedColor,
-        quantity: 1
-      });
       setBtnStatus('success');
       setTimeout(() => setBtnStatus('idle'), 2000);
-    }, 600);
+    }, 400);
 
     return () => clearTimeout(timer);
   }, [product, selectedSize, selectedColor, btnStatus, onAddToCart]);
@@ -63,7 +68,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
         <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400 mb-10 max-w-xs leading-loose">
           The requested item has been moved or is currently unavailable in our digital archive.
         </p>
-        <button onClick={() => window.location.hash = '#/shop'} className="text-[10px] font-black uppercase tracking-widest text-[#2C3468] border-b border-[#2C3468] pb-1 active:opacity-40">Return to Shop</button>
+        <button onClick={() => window.location.hash = '#/shop'} className="text-[10px] font-black uppercase tracking-widest text-[#2C3468] border-b border-[#2C3468] pb-1">Return to Shop</button>
       </div>
     );
   }
@@ -74,7 +79,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
         
         {/* Left: Gallery */}
         <div className="lg:col-span-7 space-y-4 lg:sticky lg:top-44 h-fit">
-          <div className="aspect-[4/5] bg-slate-50 overflow-hidden rounded-sm relative group">
+          <div className="aspect-[4/5] bg-slate-50 overflow-hidden rounded-sm relative group shadow-sm">
             <img 
               src={product.images[activeImage]} 
               className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" 
@@ -84,14 +89,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
               <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-md px-4 py-2 text-[9px] uppercase font-black tracking-widest shadow-xl text-red-600 border border-red-50">Rare Stock</div>
             )}
           </div>
-          <div className="grid grid-cols-4 gap-3 md:gap-5 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="grid grid-cols-4 gap-3 md:gap-5 overflow-x-auto pb-4 scrollbar-hide">
             {product.images.map((img, idx) => (
               <button 
                 key={idx} 
                 onClick={() => setActiveImage(idx)} 
-                className={`aspect-[3/4] border-b-2 transition-all flex-shrink-0 min-w-[70px] ${activeImage === idx ? 'border-[#2C3468] opacity-100' : 'border-transparent opacity-30 active:opacity-100'}`}
+                className={`aspect-[3/4] border-b-2 transition-all flex-shrink-0 min-w-[70px] ${activeImage === idx ? 'border-[#2C3468] opacity-100' : 'border-transparent opacity-30'}`}
               >
-                <img src={img} className="w-full h-full object-cover" alt="thumbnail" loading="lazy" />
+                <img src={img} className="w-full h-full object-cover" alt="thumbnail" />
               </button>
             ))}
           </div>
@@ -112,15 +117,15 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
             {/* Size */}
             <div className="space-y-5">
               <div className="flex justify-between items-center">
-                <label className="text-[10px] uppercase font-black tracking-super-wide text-slate-400">Dimension Selection</label>
-                <button className="text-[8px] uppercase font-bold tracking-widest text-[#2C3468] underline underline-offset-4 active:opacity-40">Size Guide</button>
+                <label className="text-[10px] uppercase font-black tracking-super-wide text-slate-400">Dimension</label>
+                <button className="text-[8px] uppercase font-bold tracking-widest text-[#2C3468] underline underline-offset-4">Size Guide</button>
               </div>
               <div className="grid grid-cols-4 gap-3">
                 {product.sizes.map(size => (
                   <button 
                     key={size} 
                     onClick={() => setSelectedSize(size)} 
-                    className={`py-4 text-[11px] font-black border transition-all duration-300 active:scale-95 ${selectedSize === size ? 'bg-[#2C3468] text-white border-[#2C3468] shadow-lg' : 'border-slate-100 hover:border-slate-300 text-slate-400'}`}
+                    className={`py-4 text-[11px] font-black border transition-all duration-300 active:scale-95 ${selectedSize === size ? 'bg-[#2C3468] text-white border-[#2C3468] shadow-md' : 'border-slate-100 text-slate-400'}`}
                   >
                     {size}
                   </button>
@@ -136,7 +141,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
                   <button 
                     key={color.name} 
                     onClick={() => setSelectedColor(color.name)} 
-                    className={`w-12 h-12 rounded-full border-2 p-1 transition-all duration-500 transform active:scale-75 ${selectedColor === color.name ? 'border-[#2C3468] scale-110 shadow-lg' : 'border-transparent hover:border-slate-200'}`}
+                    className={`w-12 h-12 rounded-full border-2 p-1 transition-all duration-500 transform active:scale-90 ${selectedColor === color.name ? 'border-[#2C3468] scale-110 shadow-md' : 'border-transparent'}`}
                   >
                     <div className="w-full h-full rounded-full shadow-inner border border-black/5" style={{ backgroundColor: color.hex }}></div>
                   </button>
@@ -144,14 +149,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
               </div>
             </div>
 
-            {/* Premium Interactive Button */}
+            {/* SECURE TO BAG BUTTON - Enhanced Hit Area & Logic */}
             <div className="pt-6">
               <button 
                 onClick={handleAddToCart} 
                 disabled={btnStatus !== 'idle'} 
-                className={`relative group w-full py-7 md:py-8 text-[11px] font-black uppercase tracking-[0.4em] transition-all duration-700 overflow-hidden rounded-sm flex items-center justify-center
-                  ${btnStatus === 'idle' ? 'bg-[#2C3468] text-white shadow-2xl active:scale-[0.96] active:bg-black' : ''}
-                  ${btnStatus === 'adding' ? 'bg-[#2C3468] text-white cursor-wait opacity-80' : ''}
+                className={`relative w-full py-7 md:py-8 text-[11px] font-black uppercase tracking-[0.4em] transition-all duration-500 overflow-hidden rounded-sm flex items-center justify-center select-none shadow-xl
+                  ${btnStatus === 'idle' ? 'bg-[#2C3468] text-white active:scale-[0.97] active:bg-black' : ''}
+                  ${btnStatus === 'adding' ? 'bg-[#2C3468] text-white opacity-90' : ''}
                   ${btnStatus === 'success' ? 'bg-emerald-800 text-white' : ''}
                 `}
               >
@@ -159,18 +164,18 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
                   {btnStatus === 'idle' && (
                     <>
                       <span>Secure to Bag</span>
-                      <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
                     </>
                   )}
                   {btnStatus === 'adding' && (
                     <>
                       <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                      <span className="animate-pulse">Authorizing...</span>
+                      <span>Authorizing...</span>
                     </>
                   )}
                   {btnStatus === 'success' && (
                     <>
-                      <svg className="w-5 h-5 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3.5" d="M5 13l4 4L19 7" /></svg>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3.5" d="M5 13l4 4L19 7" /></svg>
                       <span>Item Secured</span>
                     </>
                   )}
@@ -191,7 +196,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
                 </div>
                 <div>
                    <p className="text-[8px] uppercase tracking-widest text-slate-300 font-black mb-1">Fit</p>
-                   <p className="text-[10px] font-bold text-[#2C3468]">Classic Slim</p>
+                   <p className="text-[10px] font-bold text-[#2C3468]">Classic</p>
                 </div>
                 <div>
                    <p className="text-[8px] uppercase tracking-widest text-slate-300 font-black mb-1">Care</p>
