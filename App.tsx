@@ -28,6 +28,27 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
 
+  // Intersection Observer for Scroll Reveals
+  useEffect(() => {
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: "0px 0px -50px 0px"
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        }
+      });
+    }, observerOptions);
+
+    const elements = document.querySelectorAll('.reveal');
+    elements.forEach(el => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [currentRoute, products]);
+
   useEffect(() => {
     const fetchCatalog = async () => {
       try {
@@ -129,7 +150,7 @@ const App: React.FC = () => {
 
       setLastAddedItem(addedItem);
       setShowNotification(true);
-      setTimeout(() => setShowNotification(false), 3500);
+      setTimeout(() => setShowNotification(false), 3000);
 
       return finalItems;
     });
@@ -197,7 +218,7 @@ const App: React.FC = () => {
         isAddingToCart={showNotification}
       />
       
-      <main className="flex-1 pt-[64px] md:pt-44">
+      <main className="flex-1 pt-[54px] md:pt-44">
         {fetchError ? (
           <div className="max-w-xl mx-auto mt-20 p-8 text-center">
             <h3 className="text-xl font-serif italic text-slate-800 mb-2">Service Offline</h3>
@@ -213,16 +234,16 @@ const App: React.FC = () => {
 
       {/* Floating Success Notification */}
       <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:top-24 md:bottom-auto md:right-8 z-[110] w-[92%] md:w-80 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${showNotification ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
-        <div className="bg-[#2C3468] text-white p-4 shadow-2xl rounded-sm flex gap-4 items-center backdrop-blur-lg">
-          <div className="w-12 h-16 bg-white/10 flex-shrink-0">
+        <div className="bg-[#2C3468] text-white p-3 md:p-4 shadow-2xl rounded-sm flex gap-4 items-center backdrop-blur-lg">
+          <div className="w-10 h-14 md:w-12 md:h-16 bg-white/10 flex-shrink-0">
              <img src={lastAddedItem?.image} className="w-full h-full object-cover rounded-sm" alt="" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[8px] uppercase tracking-widest font-black opacity-60 mb-1">Secured</p>
-            <h4 className="text-[10px] font-bold uppercase truncate pr-4">{lastAddedItem?.title}</h4>
-            <button onClick={() => { setIsCartOpen(true); setShowNotification(false); }} className="text-[9px] uppercase tracking-widest font-bold border-b border-white/20 hover:border-white mt-2 transition-all inline-block">View Bag</button>
+            <p className="text-[7px] md:text-[8px] uppercase tracking-widest font-black opacity-60 mb-0.5">Article Secured</p>
+            <h4 className="text-[9px] md:text-[10px] font-bold uppercase truncate pr-4">{lastAddedItem?.title}</h4>
+            <button onClick={() => { setIsCartOpen(true); setShowNotification(false); }} className="text-[8px] md:text-[9px] uppercase tracking-widest font-bold border-b border-white/20 hover:border-white mt-1.5 transition-all inline-block">View Bag</button>
           </div>
-          <button onClick={() => setShowNotification(false)} className="p-2 opacity-40 hover:opacity-100 transition-opacity absolute top-1 right-1">
+          <button onClick={() => setShowNotification(false)} className="p-1 md:p-2 opacity-40 hover:opacity-100 transition-opacity absolute top-1 right-1">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
