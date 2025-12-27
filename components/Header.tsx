@@ -11,6 +11,7 @@ interface HeaderProps {
   setSearchQuery: (q: string) => void;
   activeCategory: string;
   setActiveCategory: (c: string) => void;
+  isAddingToCart?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -20,12 +21,22 @@ const Header: React.FC<HeaderProps> = ({
   searchQuery, 
   setSearchQuery, 
   activeCategory, 
-  setActiveCategory 
+  setActiveCategory,
+  isAddingToCart = false
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [cartPulse, setCartPulse] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isAddingToCart) {
+      setCartPulse(true);
+      const timer = setTimeout(() => setCartPulse(false), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isAddingToCart]);
 
   // Lock body scroll when overlays are open
   useEffect(() => {
@@ -113,7 +124,10 @@ const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center space-x-2 md:space-x-8">
             <nav className="hidden md:flex items-center space-x-10 mr-4">
               <a href="#/tailoring" className="text-[10px] font-black uppercase tracking-widest text-[#2C3468] hover:opacity-60 transition-opacity">Tailoring</a>
-              <button onClick={onCartClick} className="relative group flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#2C3468]">
+              <button 
+                onClick={onCartClick} 
+                className={`relative group flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${cartPulse ? 'text-red-600 scale-110' : 'text-[#2C3468]'}`}
+              >
                 Bag ({cartCount})
               </button>
             </nav>
@@ -123,9 +137,9 @@ const Header: React.FC<HeaderProps> = ({
               <button onClick={handleSearchToggle} className="p-2 text-[#2C3468] hover:bg-slate-50 rounded-full transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
               </button>
-              <button onClick={onCartClick} className="relative p-2 text-[#2C3468] hover:bg-slate-50 rounded-full transition-colors">
+              <button onClick={onCartClick} className={`relative p-2 transition-all duration-300 ${cartPulse ? 'scale-125 text-red-600' : 'text-[#2C3468]'} hover:bg-slate-50 rounded-full`}>
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-                {cartCount > 0 && <span className="absolute top-1 right-1 bg-[#2C3468] text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cartCount}</span>}
+                {cartCount > 0 && <span className={`absolute top-1 right-1 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold transition-colors ${cartPulse ? 'bg-red-600' : 'bg-[#2C3468]'}`}>{cartCount}</span>}
               </button>
             </div>
           </div>

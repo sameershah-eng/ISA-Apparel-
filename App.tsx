@@ -22,6 +22,10 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
+  // Cart Feedback State
+  const [lastAddedItem, setLastAddedItem] = useState<CartItem | null>(null);
+  const [showNotification, setShowNotification] = useState(false);
+
   // Global Filter State
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
@@ -100,20 +104,30 @@ const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  const addToCart = (newItem: Omit<CartItem, 'id'>) => {
+  const addToCart = (newItemData: Omit<CartItem, 'id'>) => {
     const existingIndex = cartItems.findIndex(item => 
-      item.productId === newItem.productId && 
-      item.size === newItem.size && 
-      item.color === newItem.color
+      item.productId === newItemData.productId && 
+      item.size === newItemData.size && 
+      item.color === newItemData.color
     );
+
+    let finalItem: CartItem;
+
     if (existingIndex > -1) {
       const updated = [...cartItems];
       updated[existingIndex].quantity += 1;
+      finalItem = updated[existingIndex];
       setCartItems(updated);
     } else {
-      setCartItems([...cartItems, { ...newItem, id: Math.random().toString(36).substr(2, 9) }]);
+      const newItem = { ...newItemData, id: Math.random().toString(36).substr(2, 9) };
+      finalItem = newItem;
+      setCartItems([...cartItems, newItem]);
     }
-    setTimeout(() => setIsCartOpen(true), 300);
+
+    // Trigger feedback notification
+    setLastAddedItem(finalItem);
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 4000);
   };
 
   const updateQuantity = (id: string, delta: number) => {
@@ -125,15 +139,6 @@ const App: React.FC = () => {
   const removeItem = (id: string) => {
     setCartItems(prev => prev.filter(item => item.id !== id));
   };
-
-  const filteredProducts = useMemo(() => {
-    return products.filter(p => {
-      const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            p.category.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = activeCategory === 'All' || p.category === activeCategory;
-      return matchesSearch && matchesCategory;
-    });
-  }, [products, searchQuery, activeCategory]);
 
   const renderView = () => {
     const path = currentRoute.split('?')[0]; 
@@ -180,7 +185,9 @@ const App: React.FC = () => {
         setSearchQuery={setSearchQuery}
         activeCategory={activeCategory}
         setActiveCategory={setActiveCategory}
+        isAddingToCart={showNotification}
       />
+      
       <main className="flex-1 pt-[72px] md:pt-44">
         {fetchError ? (
           <div className="max-w-xl mx-auto mt-20 p-8 text-center animate-fadeIn">
@@ -199,6 +206,24 @@ const App: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* Elegant Success Notification */}
+      <div className={`fixed top-24 right-4 md:right-8 z-[110] w-[calc(100%-2rem)] md:w-80 transition-all duration-700 transform ${showNotification ? 'translate-x-0 opacity-100' : 'translate-x-12 opacity-0 pointer-events-none'}`}>
+        <div className="bg-[#2C3468] text-white p-4 shadow-2xl rounded-sm flex gap-4 items-center">
+          <div className="w-12 h-16 bg-white/10 flex-shrink-0">
+             <img src={lastAddedItem?.image} className="w-full h-full object-cover mix-blend-overlay" alt="" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[9px] uppercase tracking-widest font-black opacity-60">Added to Bag</p>
+            <h4 className="text-[11px] font-bold uppercase truncate">{lastAddedItem?.title}</h4>
+            <button onClick={() => { setIsCartOpen(true); setShowNotification(false); }} className="text-[10px] uppercase tracking-widest font-bold border-b border-white/30 hover:border-white mt-1 transition-all">View Bag</button>
+          </div>
+          <button onClick={() => setShowNotification(false)} className="p-1 opacity-40 hover:opacity-100 transition-opacity">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+
       <Footer />
       <CartDrawer 
         isOpen={isCartOpen} 
