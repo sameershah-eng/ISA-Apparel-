@@ -22,7 +22,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Cart Feedback State
+  // Cart Feedback Notification
   const [lastAddedItem, setLastAddedItem] = useState<CartItem | null>(null);
   const [showNotification, setShowNotification] = useState(false);
 
@@ -56,10 +56,13 @@ const App: React.FC = () => {
               : (p.categories.name || 'Uncategorized');
           }
           
+          // Ensure a slug exists even if missing in DB
+          const slug = p.slug || p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + p.id.slice(0, 4);
+          
           return {
             id: p.id,
-            slug: p.slug || `p-${p.id}`,
-            title: p.title || 'Untitled',
+            slug: slug,
+            title: p.title || 'Untitled Article',
             category: categoryName,
             price: p.price ? parseFloat(p.price.toString()) : 0,
             description: p.description || '',
@@ -127,7 +130,7 @@ const App: React.FC = () => {
     // Trigger feedback notification
     setLastAddedItem(finalItem);
     setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 4000);
+    setTimeout(() => setShowNotification(false), 3500);
   };
 
   const updateQuantity = (id: string, delta: number) => {
@@ -142,7 +145,7 @@ const App: React.FC = () => {
 
   const renderView = () => {
     const path = currentRoute.split('?')[0]; 
-    if (isLoading && products.length === 0) return <div className="h-screen" />;
+    if (isLoading && products.length === 0) return <div className="h-screen bg-white" />;
 
     switch (path) {
       case '#/':
@@ -176,7 +179,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col`}>
+    <div className="min-h-screen flex flex-col selection:bg-[#2C3468] selection:text-white">
       <Header 
         onCartClick={() => setIsCartOpen(true)} 
         cartCount={cartItems.reduce((acc, item) => acc + item.quantity, 0)} 
@@ -188,7 +191,7 @@ const App: React.FC = () => {
         isAddingToCart={showNotification}
       />
       
-      <main className="flex-1 pt-[72px] md:pt-44">
+      <main className="flex-1 pt-[64px] md:pt-44">
         {fetchError ? (
           <div className="max-w-xl mx-auto mt-20 p-8 text-center animate-fadeIn">
             <h3 className="text-xl font-serif italic text-slate-800 mb-2">Service Offline</h3>
@@ -197,8 +200,8 @@ const App: React.FC = () => {
           </div>
         ) : isLoading && products.length === 0 ? (
           <div className="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center">
-            <div className="w-12 h-12 border-t-2 border-[#2C3468] rounded-full animate-spin"></div>
-            <p className="mt-4 text-[10px] uppercase tracking-super-wide text-slate-400 animate-pulse">Entering Atelier</p>
+            <div className="w-10 h-10 border-t-2 border-[#2C3468] rounded-full animate-spin mb-4"></div>
+            <p className="text-[10px] uppercase tracking-super-wide text-slate-400 animate-pulse">Entering Atelier</p>
           </div>
         ) : (
           <div key={currentRoute} className="animate-fadeIn">
@@ -207,19 +210,19 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Elegant Success Notification */}
-      <div className={`fixed top-24 right-4 md:right-8 z-[110] w-[calc(100%-2rem)] md:w-80 transition-all duration-700 transform ${showNotification ? 'translate-x-0 opacity-100' : 'translate-x-12 opacity-0 pointer-events-none'}`}>
-        <div className="bg-[#2C3468] text-white p-4 shadow-2xl rounded-sm flex gap-4 items-center">
-          <div className="w-12 h-16 bg-white/10 flex-shrink-0">
-             <img src={lastAddedItem?.image} className="w-full h-full object-cover mix-blend-overlay" alt="" />
+      {/* Floating Success Notification (Mobile Friendly) */}
+      <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:top-24 md:bottom-auto md:right-8 z-[110] w-[90%] md:w-80 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${showNotification ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
+        <div className="bg-[#2C3468] text-white p-4 shadow-2xl rounded-sm flex gap-4 items-center backdrop-blur-md">
+          <div className="w-10 h-14 bg-white/10 flex-shrink-0">
+             <img src={lastAddedItem?.image} className="w-full h-full object-cover rounded-sm" alt="" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[9px] uppercase tracking-widest font-black opacity-60">Added to Bag</p>
-            <h4 className="text-[11px] font-bold uppercase truncate">{lastAddedItem?.title}</h4>
-            <button onClick={() => { setIsCartOpen(true); setShowNotification(false); }} className="text-[10px] uppercase tracking-widest font-bold border-b border-white/30 hover:border-white mt-1 transition-all">View Bag</button>
+            <p className="text-[8px] uppercase tracking-widest font-black opacity-60 mb-0.5">Article Secured</p>
+            <h4 className="text-[10px] font-bold uppercase truncate pr-4">{lastAddedItem?.title}</h4>
+            <button onClick={() => { setIsCartOpen(true); setShowNotification(false); }} className="text-[9px] uppercase tracking-widest font-bold border-b border-white/20 hover:border-white mt-1.5 transition-all inline-block">View Bag</button>
           </div>
-          <button onClick={() => setShowNotification(false)} className="p-1 opacity-40 hover:opacity-100 transition-opacity">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          <button onClick={() => setShowNotification(false)} className="p-1.5 opacity-40 hover:opacity-100 transition-opacity absolute top-2 right-2">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
       </div>
