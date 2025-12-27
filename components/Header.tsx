@@ -25,6 +25,8 @@ const Header: React.FC<HeaderProps> = ({
   isAddingToCart = false
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [cartPulse, setCartPulse] = useState(false);
@@ -38,17 +40,30 @@ const Header: React.FC<HeaderProps> = ({
     }
   }, [isAddingToCart]);
 
+  // Smart Header Logic: Hide on scroll down, show on scroll up
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 15);
+      const currentScrollY = window.scrollY;
+      
+      // Basic background logic
+      setIsScrolled(currentScrollY > 20);
+      
+      // Visibility logic
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsVisible(false); // Scrolling down
+      } else {
+        setIsVisible(true); // Scrolling up
+      }
+      
+      setLastScrollY(currentScrollY);
     };
+    
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [lastScrollY]);
 
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
-      // Small delay to ensure DOM is ready on mobile
       setTimeout(() => searchInputRef.current?.focus(), 50);
     }
   }, [isSearchOpen]);
@@ -72,11 +87,9 @@ const Header: React.FC<HeaderProps> = ({
     if (isMenuOpen) setIsMenuOpen(false);
   };
 
-  // Robust Unified Navigation for All Screens
   const handleNavigate = (path: string) => {
     setIsSearchOpen(false);
     setIsMenuOpen(false);
-    // Force immediate hash update to trigger App.tsx router
     if (window.location.hash === path) {
        window.scrollTo({ top: 0, behavior: 'instant' });
     } else {
@@ -86,18 +99,19 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      <header className={`fixed top-0 left-0 w-full z-[70] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${isScrolled || isSearchOpen || isMenuOpen ? 'bg-white/40 backdrop-blur-2xl py-2 md:py-4 border-b border-black/5' : 'bg-transparent py-4 md:py-8'}`}>
+      <header className={`fixed top-0 left-0 w-full z-[70] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] 
+        ${!isVisible && !isSearchOpen && !isMenuOpen ? '-translate-y-full' : 'translate-y-0'}
+        ${isScrolled || isSearchOpen || isMenuOpen ? 'bg-white/90 backdrop-blur-2xl py-2 md:py-4 border-b border-black/5 shadow-sm' : 'bg-transparent py-4 md:py-8'}`}>
         <div className="max-w-7xl mx-auto px-4 md:px-12 flex items-center relative h-10 md:h-12">
           
-          {/* LEFT SECTION */}
           <div className="flex-1 flex items-center justify-start">
              <button 
                 onClick={() => setIsMenuOpen(true)}
-                className="md:hidden p-2 text-[#2C3468] active:scale-90 transition-transform -ml-2 z-[80]"
+                className="p-2 text-[#2C3468] active:scale-[0.85] transition-transform -ml-2 z-[80]"
                 aria-label="Menu"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M4 8h16M4 16h16" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 8h16M4 16h16" />
                 </svg>
               </button>
 
@@ -107,52 +121,49 @@ const Header: React.FC<HeaderProps> = ({
               </nav>
           </div>
 
-          {/* CENTER LOGO - Strictly anchored */}
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[80]">
             <button onClick={() => handleNavigate('#/')} className={`transition-all duration-700 hover:scale-105 block ${isScrolled ? 'scale-[0.45] md:scale-75' : 'scale-[0.5] md:scale-90'}`}>
               <Logo />
             </button>
           </div>
 
-          {/* RIGHT SECTION */}
           <div className="flex-1 flex items-center justify-end">
-            <nav className="flex items-center space-x-4 md:space-x-12">
+            <nav className="flex items-center space-x-3 md:space-x-12">
               <button 
                 onClick={onCartClick} 
                 className={`relative group flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] transition-all duration-700 z-[80] ${cartPulse ? 'text-emerald-600 scale-110' : 'text-[#2C3468]'}`}
               >
                 <span className="hidden md:inline">Bag ({cartCount})</span>
-                <div className="md:hidden relative">
-                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-                   {cartCount > 0 && <span className="absolute -top-1 -right-1 bg-[#2C3468] text-white text-[7px] w-3 h-3 rounded-full flex items-center justify-center font-bold shadow-sm">{cartCount}</span>}
+                <div className="relative p-1">
+                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                   {cartCount > 0 && <span className="absolute top-0 right-0 bg-[#2C3468] text-white text-[7px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold shadow-sm">{cartCount}</span>}
                 </div>
               </button>
               <button 
                 onClick={handleSearchToggle}
-                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#2C3468] hover:opacity-50 transition-all z-[80]"
+                className="flex items-center p-1 md:gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#2C3468] hover:opacity-50 transition-all z-[80] active:scale-[0.85]"
               >
-                <svg className="w-4 h-4 md:w-3.5 md:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <svg className="w-5 h-5 md:w-3.5 md:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 <span className="hidden md:inline">Search</span>
               </button>
             </nav>
           </div>
         </div>
 
-        {/* Cinematic Search Overlay */}
         <div className={`absolute top-full right-0 w-full md:w-[65vw] bg-white shadow-2xl transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-y-auto ${isSearchOpen ? 'h-[calc(100dvh-54px)] md:max-h-[85vh] border-t opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}>
           <div className="max-w-4xl mx-auto px-6 lg:px-12 py-10 md:py-20">
             <div className="flex flex-col space-y-12">
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                    <h3 className="text-[8px] uppercase font-black tracking-super-wide text-slate-300">Catalog retrieval</h3>
-                   <button onClick={() => setIsSearchOpen(false)} className="text-[8px] uppercase font-bold text-slate-400 md:hidden p-2">Close</button>
+                   <button onClick={() => setIsSearchOpen(false)} className="text-[8px] uppercase font-bold text-slate-400 p-2">Close</button>
                 </div>
                 <div className="relative border-b border-[#2C3468]/20 pb-2">
                   <input 
                     ref={searchInputRef}
                     type="text" 
                     placeholder="Keywords..."
-                    className="w-full bg-transparent text-xl md:text-3xl font-serif italic text-[#2C3468] focus:outline-none placeholder:opacity-10 py-2"
+                    className="w-full bg-transparent text-2xl md:text-3xl font-serif italic text-[#2C3468] focus:outline-none placeholder:opacity-10 py-2"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -169,7 +180,7 @@ const Header: React.FC<HeaderProps> = ({
                           setActiveCategory(cat);
                           handleNavigate('#/shop');
                         }}
-                        className={`px-3 py-2 text-[8px] md:text-[9px] font-black uppercase tracking-widest border transition-all ${activeCategory === cat ? 'bg-[#2C3468] text-white border-[#2C3468]' : 'border-slate-100 text-slate-400 hover:text-[#2C3468]'}`}
+                        className={`px-4 py-3 text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.94] ${activeCategory === cat ? 'bg-[#2C3468] text-white border-[#2C3468]' : 'border-slate-100 text-slate-400 hover:text-[#2C3468]'}`}
                       >
                         {cat}
                       </button>
@@ -180,7 +191,7 @@ const Header: React.FC<HeaderProps> = ({
                   <h3 className="text-[8px] uppercase font-black tracking-super-wide text-slate-300">Quick Hits</h3>
                   <div className="grid grid-cols-2 gap-4">
                     {quickResults.map(p => (
-                      <button key={p.id} onClick={() => handleNavigate(`#/product/${p.slug}`)} className="group text-left space-y-2">
+                      <button key={p.id} onClick={() => handleNavigate(`#/product/${p.slug}`)} className="group text-left space-y-2 active:opacity-70">
                         <div className="aspect-[3/4] bg-slate-50 overflow-hidden rounded-sm relative shadow-sm">
                           <img src={p.images[0]} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" alt={p.title} loading="lazy" />
                         </div>
@@ -195,35 +206,35 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       </header>
 
-      {/* MOBILE DRAWER - Refined Typography & Spacing */}
+      {/* MOBILE DRAWER */}
       <div className={`fixed inset-0 z-[100] transition-opacity duration-700 ${isMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)} />
         <div className={`absolute top-0 left-0 w-[85%] max-w-sm h-full bg-white shadow-2xl transition-transform duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="flex flex-col h-full">
             <div className="p-6 flex justify-between items-center bg-white border-b border-slate-50">
               <Logo className="scale-[0.4] origin-left" />
-              <button onClick={() => setIsMenuOpen(false)} className="p-3 text-[#2C3468] active:scale-75 transition-transform">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M6 18L18 6M6 6l12 12"/></svg>
+              <button onClick={() => setIsMenuOpen(false)} className="p-3 text-[#2C3468] active:scale-[0.75] transition-transform">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
             </div>
             <nav className="flex-1 overflow-y-auto p-8 space-y-12">
               <div className="space-y-8">
                 <h3 className="text-[8px] uppercase font-black tracking-super-wide text-slate-300">ARCHIVE</h3>
-                <ul className="space-y-6">
-                  <li><button onClick={() => handleNavigate('#/')} className="text-[11px] uppercase font-black tracking-[0.25em] text-[#2C3468] block w-full text-left active:opacity-50">The Atelier</button></li>
-                  <li><button onClick={() => handleNavigate('#/shop')} className="text-[11px] uppercase font-black tracking-[0.25em] text-[#2C3468] block w-full text-left active:opacity-50">Collections</button></li>
-                  <li><button onClick={() => handleNavigate('#/fabrics')} className="text-[11px] uppercase font-black tracking-[0.25em] text-[#2C3468] block w-full text-left active:opacity-50">The Fabrics</button></li>
-                  <li><button onClick={() => handleNavigate('#/tailoring')} className="text-[11px] uppercase font-black tracking-[0.25em] text-[#2C3468] block w-full text-left active:opacity-50">Tailoring</button></li>
-                  <li><button onClick={() => handleNavigate('#/accessories')} className="text-[11px] uppercase font-black tracking-[0.25em] text-[#2C3468] block w-full text-left active:opacity-50">Accessories</button></li>
+                <ul className="space-y-8">
+                  <li><button onClick={() => handleNavigate('#/')} className="text-[14px] uppercase font-black tracking-[0.2em] text-[#2C3468] block w-full text-left active:opacity-50">The Atelier</button></li>
+                  <li><button onClick={() => handleNavigate('#/shop')} className="text-[14px] uppercase font-black tracking-[0.2em] text-[#2C3468] block w-full text-left active:opacity-50">Collections</button></li>
+                  <li><button onClick={() => handleNavigate('#/fabrics')} className="text-[14px] uppercase font-black tracking-[0.2em] text-[#2C3468] block w-full text-left active:opacity-50">The Fabrics</button></li>
+                  <li><button onClick={() => handleNavigate('#/tailoring')} className="text-[14px] uppercase font-black tracking-[0.2em] text-[#2C3468] block w-full text-left active:opacity-50">Tailoring</button></li>
+                  <li><button onClick={() => handleNavigate('#/accessories')} className="text-[14px] uppercase font-black tracking-[0.2em] text-[#2C3468] block w-full text-left active:opacity-50">Accessories</button></li>
                 </ul>
               </div>
 
-              <div className="pt-8 border-t border-slate-50 space-y-6">
+              <div className="pt-8 border-t border-slate-50 space-y-8">
                 <h3 className="text-[8px] uppercase font-black tracking-super-wide text-slate-300">Support</h3>
-                <ul className="space-y-4 text-[9px] font-bold tracking-widest text-slate-400 uppercase">
-                  <li><button onClick={() => setIsMenuOpen(false)} className="hover:text-[#2C3468] transition-colors">Our Story</button></li>
-                  <li><button onClick={() => setIsMenuOpen(false)} className="hover:text-[#2C3468] transition-colors">Track Shipment</button></li>
-                  <li><button onClick={() => setIsMenuOpen(false)} className="hover:text-[#2C3468] transition-colors">Returns & Boutique</button></li>
+                <ul className="space-y-6 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+                  <li><button onClick={() => setIsMenuOpen(false)} className="active:text-[#2C3468]">Our Story</button></li>
+                  <li><button onClick={() => setIsMenuOpen(false)} className="active:text-[#2C3468]">Track Shipment</button></li>
+                  <li><button onClick={() => setIsMenuOpen(false)} className="active:text-[#2C3468]">Returns & Boutique</button></li>
                 </ul>
               </div>
             </nav>

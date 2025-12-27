@@ -13,14 +13,19 @@
         :root {
             --isa-navy: #2C3468;
         }
+        * {
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
         body {
             font-family: 'Inter', sans-serif;
             scroll-behavior: smooth;
             background-color: #fff;
-            -webkit-tap-highlight-color: transparent;
             text-rendering: optimizeLegibility;
             -webkit-font-smoothing: antialiased;
             touch-action: pan-y;
+            overflow-x: hidden;
+            width: 100%;
         }
         .font-serif {
             font-family: 'Playfair Display', serif;
@@ -29,16 +34,38 @@
         /* High-Performance Smooth Scroll Reveal System */
         .reveal {
             opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+            transform: translateY(15px);
+            transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
             will-change: opacity, transform;
-            /* Prevent invisible elements from blocking interaction */
-            pointer-events: none;
         }
         .reveal.active {
             opacity: 1;
             transform: translateY(0);
-            pointer-events: auto;
+        }
+
+        /* Mobile Gallery Snap & Polish */
+        .snap-x {
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            display: flex;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .snap-x::-webkit-scrollbar {
+            display: none;
+        }
+        .snap-center {
+            scroll-snap-align: center;
+            scroll-snap-stop: always;
+            flex-shrink: 0;
+            width: 100%;
+        }
+
+        /* Haptic Button States */
+        button:active {
+          transform: scale(0.96);
+          transition: transform 0.1s ease-out;
         }
 
         @keyframes fadeIn {
@@ -46,23 +73,24 @@
           to { opacity: 1; transform: translateY(0); }
         }
         .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out forwards;
+          animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        /* Mobile Interaction Optimizations */
-        button, a, [role="button"] {
-          touch-action: manipulation;
-          cursor: pointer;
-          -webkit-user-select: none;
-          user-select: none;
+        #root { 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column;
+            width: 100%;
         }
 
-        /* Standardize input appearance on mobile */
-        input, select, textarea {
-          font-size: 16px !important;
+        /* Hide Scrollbars */
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
         }
-
-        #root { min-height: 100vh; display: flex; flex-direction: column; }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
     </style>
 <script type="importmap">
 {
