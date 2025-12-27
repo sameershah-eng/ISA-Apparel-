@@ -3,40 +3,45 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ISA | Premium Apparel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --isa-navy: #2C3468;
+        }
         body {
             font-family: 'Inter', sans-serif;
             scroll-behavior: smooth;
             background-color: #fff;
             -webkit-tap-highlight-color: transparent;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
         }
         .font-serif {
             font-family: 'Playfair Display', serif;
         }
-        /* Elegant Custom Scrollbar */
+        /* Custom Scrollbar */
         ::-webkit-scrollbar {
-            width: 3px;
+            width: 2px;
         }
         ::-webkit-scrollbar-track {
             background: #ffffff;
         }
         ::-webkit-scrollbar-thumb {
-            background: #2C3468;
+            background: var(--isa-navy);
         }
         
         /* High-Performance Smooth Scroll Reveal System */
         .reveal {
             opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 1.2s cubic-bezier(0.23, 1, 0.32, 1), transform 1.2s cubic-bezier(0.23, 1, 0.32, 1);
-            /* CRITICAL FIX: Prevent invisible elements from blocking clicks on mobile */
+            transform: translateY(15px);
+            transition: opacity 0.8s cubic-bezier(0.23, 1, 0.32, 1), transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);
             pointer-events: none; 
+            will-change: opacity, transform;
         }
         .reveal.active {
             opacity: 1;
@@ -45,20 +50,21 @@
         }
 
         @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
+          from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
         }
         .animate-fadeIn {
-          animation: fadeIn 0.8s ease forwards;
+          animation: fadeIn 0.5s ease-out forwards;
         }
 
-        /* Prevent layout shift during hydrations */
-        #root { min-height: 100vh; }
-
-        /* Ensure smooth button interactions on mobile */
-        button, a {
+        /* Mobile Interaction Optimizations */
+        button, a, [role="button"] {
           touch-action: manipulation;
+          cursor: pointer;
         }
+
+        /* Prevent layout shift */
+        #root { min-height: 100vh; display: flex; flex-direction: column; }
     </style>
 <script type="importmap">
 {

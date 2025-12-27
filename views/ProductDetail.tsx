@@ -32,16 +32,20 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
     }
   }, [product]);
 
+  // Size selection - Fast feedback
+  const handleSizeSelect = (size: string) => {
+    setSelectedSize(size);
+  };
+
+  // Add to cart - Direct and persistent
   const handleAddToCart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
+    // Note: Removed preventDefault to allow standard tap behavior
     if (!product || btnStatus !== 'idle') return;
     
-    // Explicitly set state and trigger callback
+    // 1. Visual trigger
     setBtnStatus('adding');
     
-    // Slight delay for animation but immediate logic execution
+    // 2. Immediate Logic execution
     onAddToCart({
       productId: product.id,
       title: product.title,
@@ -52,6 +56,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
       quantity: 1
     });
 
+    // 3. UI Status progression
     const timer = setTimeout(() => {
       setBtnStatus('success');
       setTimeout(() => setBtnStatus('idle'), 2000);
@@ -68,7 +73,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
         <p className="text-[10px] uppercase tracking-[0.3em] text-slate-400 mb-10 max-w-xs leading-loose">
           The requested item has been moved or is currently unavailable in our digital archive.
         </p>
-        <button onClick={() => window.location.hash = '#/shop'} className="text-[10px] font-black uppercase tracking-widest text-[#2C3468] border-b border-[#2C3468] pb-1">Return to Shop</button>
+        <button onClick={() => window.location.hash = '#/shop'} className="text-[10px] font-black uppercase tracking-widest text-[#2C3468] border-b border-[#2C3468] pb-1 active:opacity-50">Return to Shop</button>
       </div>
     );
   }
@@ -82,11 +87,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
           <div className="aspect-[4/5] bg-slate-50 overflow-hidden rounded-sm relative group shadow-sm">
             <img 
               src={product.images[activeImage]} 
-              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" 
+              className="w-full h-full object-cover" 
               alt={product.title} 
             />
             {product.stock < 10 && (
-              <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-md px-4 py-2 text-[9px] uppercase font-black tracking-widest shadow-xl text-red-600 border border-red-50">Rare Stock</div>
+              <div className="absolute top-6 left-6 bg-white/95 backdrop-blur-md px-4 py-2 text-[9px] uppercase font-black tracking-widest shadow-xl text-red-600 border border-red-50">Rare Stock</div>
             )}
           </div>
           <div className="grid grid-cols-4 gap-3 md:gap-5 overflow-x-auto pb-4 scrollbar-hide">
@@ -94,9 +99,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
               <button 
                 key={idx} 
                 onClick={() => setActiveImage(idx)} 
-                className={`aspect-[3/4] border-b-2 transition-all flex-shrink-0 min-w-[70px] ${activeImage === idx ? 'border-[#2C3468] opacity-100' : 'border-transparent opacity-30'}`}
+                className={`aspect-[3/4] border-b-2 transition-all flex-shrink-0 min-w-[70px] ${activeImage === idx ? 'border-[#2C3468] opacity-100' : 'border-transparent opacity-30 active:opacity-100'}`}
               >
-                <img src={img} className="w-full h-full object-cover" alt="thumbnail" />
+                <img src={img} className="w-full h-full object-cover" alt="thumbnail" loading="lazy" />
               </button>
             ))}
           </div>
@@ -109,23 +114,24 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
                <span className="text-[9px] md:text-[10px] uppercase tracking-[0.5em] font-black text-slate-300">{product.category}</span>
                <div className="h-px flex-1 bg-slate-100"></div>
             </div>
-            <h1 className="text-4xl md:text-6xl font-serif italic text-slate-900 leading-tight">{product.title}</h1>
-            <p className="text-2xl md:text-3xl font-light text-[#2C3468] tabular-nums tracking-tighter">${product.price.toFixed(2)}</p>
+            <h1 className="text-4xl md:text-5xl font-serif italic text-slate-900 leading-tight">{product.title}</h1>
+            <p className="text-2xl font-light text-[#2C3468] tabular-nums tracking-tighter">${product.price.toFixed(2)}</p>
           </div>
 
           <div className="space-y-12">
-            {/* Size */}
+            {/* Size - Enhanced Mobile Hit Area */}
             <div className="space-y-5">
               <div className="flex justify-between items-center">
-                <label className="text-[10px] uppercase font-black tracking-super-wide text-slate-400">Dimension</label>
-                <button className="text-[8px] uppercase font-bold tracking-widest text-[#2C3468] underline underline-offset-4">Size Guide</button>
+                <label className="text-[10px] uppercase font-black tracking-super-wide text-slate-400">Dimensions</label>
+                <button className="text-[8px] uppercase font-bold tracking-widest text-[#2C3468] underline underline-offset-4 active:opacity-50">Size Guide</button>
               </div>
               <div className="grid grid-cols-4 gap-3">
                 {product.sizes.map(size => (
                   <button 
                     key={size} 
-                    onClick={() => setSelectedSize(size)} 
-                    className={`py-4 text-[11px] font-black border transition-all duration-300 active:scale-95 ${selectedSize === size ? 'bg-[#2C3468] text-white border-[#2C3468] shadow-md' : 'border-slate-100 text-slate-400'}`}
+                    type="button"
+                    onClick={() => handleSizeSelect(size)} 
+                    className={`py-4 text-[11px] font-black border transition-colors duration-150 active:scale-95 ${selectedSize === size ? 'bg-[#2C3468] text-white border-[#2C3468] shadow-md' : 'border-slate-100 text-slate-400'}`}
                   >
                     {size}
                   </button>
@@ -135,13 +141,14 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
 
             {/* Color */}
             <div className="space-y-5">
-              <label className="text-[10px] uppercase font-black tracking-super-wide text-slate-400">Shade — <span className="text-[#2C3468] font-black">{selectedColor}</span></label>
+              <label className="text-[10px] uppercase font-black tracking-super-wide text-slate-400">Archival Shade — <span className="text-[#2C3468] font-black">{selectedColor}</span></label>
               <div className="flex gap-5">
                 {product.colors.map(color => (
                   <button 
                     key={color.name} 
+                    type="button"
                     onClick={() => setSelectedColor(color.name)} 
-                    className={`w-12 h-12 rounded-full border-2 p-1 transition-all duration-500 transform active:scale-90 ${selectedColor === color.name ? 'border-[#2C3468] scale-110 shadow-md' : 'border-transparent'}`}
+                    className={`w-12 h-12 rounded-full border-2 p-1 transition-all duration-300 transform active:scale-90 ${selectedColor === color.name ? 'border-[#2C3468] scale-110 shadow-md' : 'border-transparent'}`}
                   >
                     <div className="w-full h-full rounded-full shadow-inner border border-black/5" style={{ backgroundColor: color.hex }}></div>
                   </button>
@@ -149,18 +156,19 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
               </div>
             </div>
 
-            {/* SECURE TO BAG BUTTON - Enhanced Hit Area & Logic */}
+            {/* SECURE TO BAG BUTTON - Absolute Reliability */}
             <div className="pt-6">
               <button 
+                type="button"
                 onClick={handleAddToCart} 
                 disabled={btnStatus !== 'idle'} 
-                className={`relative w-full py-7 md:py-8 text-[11px] font-black uppercase tracking-[0.4em] transition-all duration-500 overflow-hidden rounded-sm flex items-center justify-center select-none shadow-xl
-                  ${btnStatus === 'idle' ? 'bg-[#2C3468] text-white active:scale-[0.97] active:bg-black' : ''}
-                  ${btnStatus === 'adding' ? 'bg-[#2C3468] text-white opacity-90' : ''}
-                  ${btnStatus === 'success' ? 'bg-emerald-800 text-white' : ''}
+                className={`relative w-full py-7 md:py-8 text-[11px] font-black uppercase tracking-[0.4em] transition-all duration-500 overflow-hidden rounded-sm flex items-center justify-center select-none shadow-xl border
+                  ${btnStatus === 'idle' ? 'bg-[#2C3468] text-white border-[#2C3468] active:scale-[0.97] active:bg-black' : ''}
+                  ${btnStatus === 'adding' ? 'bg-[#2C3468] text-white border-[#2C3468] opacity-90' : ''}
+                  ${btnStatus === 'success' ? 'bg-emerald-800 text-white border-emerald-800' : ''}
                 `}
               >
-                <div className="relative flex items-center gap-5">
+                <div className="relative flex items-center gap-5 pointer-events-none">
                   {btnStatus === 'idle' && (
                     <>
                       <span>Secure to Bag</span>
@@ -170,13 +178,13 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
                   {btnStatus === 'adding' && (
                     <>
                       <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                      <span>Authorizing...</span>
+                      <span>Processing...</span>
                     </>
                   )}
                   {btnStatus === 'success' && (
                     <>
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3.5" d="M5 13l4 4L19 7" /></svg>
-                      <span>Item Secured</span>
+                      <span>Secured</span>
                     </>
                   )}
                 </div>
@@ -186,7 +194,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ products, slug, onAddToCa
 
           <div className="pt-16 border-t border-slate-100 space-y-12">
              <div className="space-y-4">
-               <h4 className="text-[10px] uppercase font-black tracking-widest text-slate-900">Archival Details</h4>
+               <h4 className="text-[10px] uppercase font-black tracking-widest text-slate-900">Archival Narrative</h4>
                <p className="text-xs md:text-sm text-slate-500 font-light leading-relaxed">{product.description}</p>
              </div>
              <div className="grid grid-cols-3 gap-6 py-6 border-y border-slate-50">
