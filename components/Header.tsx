@@ -27,6 +27,16 @@ const Header: React.FC<HeaderProps> = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Lock body scroll when overlays are open
+  useEffect(() => {
+    if (isSearchOpen || isMenuOpen) {
+      document.body.classList.add('overflow-hidden');
+    } else {
+      document.body.classList.remove('overflow-hidden');
+    }
+    return () => document.body.classList.remove('overflow-hidden');
+  }, [isSearchOpen, isMenuOpen]);
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
@@ -57,7 +67,7 @@ const Header: React.FC<HeaderProps> = ({
 
   const handleSearchToggle = () => {
     setIsSearchOpen(!isSearchOpen);
-    setIsMenuOpen(false); // Close menu if search opens
+    setIsMenuOpen(false); 
   };
 
   const handleQuickLink = (path: string) => {
@@ -74,7 +84,7 @@ const Header: React.FC<HeaderProps> = ({
           {/* Mobile Menu Trigger (Left) */}
           <button 
             onClick={() => setIsMenuOpen(true)}
-            className="md:hidden p-2 text-[#2C3468]"
+            className="md:hidden p-2 text-[#2C3468] hover:bg-slate-50 rounded-full transition-colors"
             aria-label="Open Menu"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,7 +105,7 @@ const Header: React.FC<HeaderProps> = ({
           </nav>
 
           {/* Logo center */}
-          <a href="#/" className={`transition-all duration-500 hover:scale-105 ${isScrolled ? 'scale-75 md:scale-90' : 'scale-90 md:scale-110'}`}>
+          <a href="#/" onClick={() => handleQuickLink('#/')} className={`transition-all duration-500 hover:scale-105 ${isScrolled ? 'scale-75 md:scale-90' : 'scale-90 md:scale-110'}`}>
             <Logo />
           </a>
 
@@ -110,10 +120,10 @@ const Header: React.FC<HeaderProps> = ({
             
             {/* Mobile Icons (Right) */}
             <div className="flex items-center md:hidden">
-              <button onClick={handleSearchToggle} className="p-2 text-[#2C3468]">
+              <button onClick={handleSearchToggle} className="p-2 text-[#2C3468] hover:bg-slate-50 rounded-full transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
               </button>
-              <button onClick={onCartClick} className="relative p-2 text-[#2C3468]">
+              <button onClick={onCartClick} className="relative p-2 text-[#2C3468] hover:bg-slate-50 rounded-full transition-colors">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
                 {cartCount > 0 && <span className="absolute top-1 right-1 bg-[#2C3468] text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cartCount}</span>}
               </button>
@@ -122,12 +132,20 @@ const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Search Overlay Dropdown (Responsive) */}
-        <div className={`absolute top-full left-0 w-full bg-white shadow-2xl transition-all duration-500 overflow-y-auto ${isSearchOpen ? 'max-h-[100vh] md:max-h-[80vh] border-t border-slate-100' : 'max-h-0'}`}>
-          <div className="max-w-7xl mx-auto px-6 lg:px-12 py-8 md:py-12">
+        <div className={`absolute top-full left-0 w-full bg-white shadow-2xl transition-all duration-500 overflow-y-auto ${isSearchOpen ? 'h-[calc(100dvh-64px)] md:max-h-[80vh] border-t border-slate-100' : 'max-h-0 opacity-0 pointer-events-none'}`}>
+          <div className="max-w-7xl mx-auto px-6 lg:px-12 py-6 md:py-12">
+            
+            {/* Mobile Close Button for Search */}
+            <div className="md:hidden flex justify-end mb-4">
+              <button onClick={() => setIsSearchOpen(false)} className="text-[10px] uppercase font-bold tracking-widest text-slate-400 p-2">
+                Close Search
+              </button>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-16">
               
               {/* Left: Input and Categories */}
-              <div className="lg:col-span-4 space-y-8 md:space-y-10">
+              <div className="lg:col-span-4 space-y-6 md:space-y-10">
                 <div className="space-y-4">
                   <h3 className="text-[10px] uppercase font-black tracking-widest text-slate-400">Search Archive</h3>
                   <div className="relative border-b border-[#2C3468] pb-2">
@@ -135,7 +153,7 @@ const Header: React.FC<HeaderProps> = ({
                       ref={searchInputRef}
                       type="text" 
                       placeholder="e.g. Linen"
-                      className="w-full bg-transparent text-xl md:text-2xl font-serif italic text-[#2C3468] focus:outline-none placeholder:opacity-20"
+                      className="w-full bg-transparent text-xl md:text-2xl font-serif italic text-[#2C3468] focus:outline-none placeholder:opacity-20 py-2"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -162,7 +180,7 @@ const Header: React.FC<HeaderProps> = ({
               </div>
 
               {/* Right: Results Preview */}
-              <div className="lg:col-span-8 pb-10 md:pb-0">
+              <div className="lg:col-span-8 pb-20 md:pb-0">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-[10px] uppercase font-black tracking-widest text-slate-400">
                     {searchQuery ? `Results (${quickResults.length})` : 'New Arrivals'}
@@ -189,12 +207,12 @@ const Header: React.FC<HeaderProps> = ({
                       </div>
                       <div className="min-w-0">
                         <p className="text-[7px] md:text-[8px] uppercase tracking-widest text-slate-400 font-bold truncate">{p.category}</p>
-                        <h4 className="text-[9px] md:text-[10px] font-bold text-slate-800 uppercase truncate">{p.title}</h4>
+                        <h4 className="text-[9px] md:text-[10px] font-bold text-slate-800 uppercase truncate leading-tight">{p.title}</h4>
                         <p className="text-[9px] md:text-[10px] text-[#2C3468] font-bold">${p.price.toFixed(2)}</p>
                       </div>
                     </button>
                   ))}
-                  {quickResults.length === 0 && searchQuery && (
+                  {(searchQuery || activeCategory !== 'All') && quickResults.length === 0 && (
                     <div className="col-span-2 md:col-span-4 py-8 text-center">
                       <p className="text-slate-400 font-serif italic text-sm">No results found.</p>
                     </div>
@@ -208,13 +226,13 @@ const Header: React.FC<HeaderProps> = ({
       </header>
 
       {/* Mobile Menu Side Drawer */}
-      <div className={`fixed inset-0 z-[80] transition-opacity duration-500 ${isMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+      <div className={`fixed inset-0 z-[100] transition-opacity duration-500 ${isMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)} />
         <div className={`absolute top-0 left-0 w-4/5 max-w-sm h-full bg-white shadow-2xl transition-transform duration-500 ease-out transform ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="flex flex-col h-full">
-            <div className="p-6 border-b flex justify-between items-center">
+            <div className="p-6 border-b flex justify-between items-center bg-white sticky top-0 z-10">
               <Logo className="scale-75 origin-left" />
-              <button onClick={() => setIsMenuOpen(false)} className="p-2 text-slate-400">
+              <button onClick={() => setIsMenuOpen(false)} className="p-2 text-[#2C3468] hover:bg-slate-50 rounded-full transition-colors" aria-label="Close Menu">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
             </div>
@@ -223,20 +241,20 @@ const Header: React.FC<HeaderProps> = ({
               <div className="space-y-8">
                 <h3 className="text-[10px] uppercase font-black tracking-super-wide text-slate-400 border-b border-slate-50 pb-2">Collections</h3>
                 <ul className="space-y-6">
-                  <li><button onClick={() => handleQuickLink('#/shop')} className="text-2xl font-serif italic text-[#2C3468]">Ready to Wear</button></li>
-                  <li><button onClick={() => handleQuickLink('#/fabrics')} className="text-2xl font-serif italic text-[#2C3468]">Fabric Archive</button></li>
-                  <li><button onClick={() => handleQuickLink('#/tailoring')} className="text-2xl font-serif italic text-[#2C3468]">Bespoke Services</button></li>
-                  <li><button onClick={() => handleQuickLink('#/accessories')} className="text-2xl font-serif italic text-[#2C3468]">Accessories</button></li>
+                  <li><button onClick={() => handleQuickLink('#/shop')} className="text-2xl font-serif italic text-[#2C3468] block w-full text-left">Ready to Wear</button></li>
+                  <li><button onClick={() => handleQuickLink('#/fabrics')} className="text-2xl font-serif italic text-[#2C3468] block w-full text-left">Fabric Archive</button></li>
+                  <li><button onClick={() => handleQuickLink('#/tailoring')} className="text-2xl font-serif italic text-[#2C3468] block w-full text-left">Bespoke Services</button></li>
+                  <li><button onClick={() => handleQuickLink('#/accessories')} className="text-2xl font-serif italic text-[#2C3468] block w-full text-left">Accessories</button></li>
                 </ul>
               </div>
 
               <div className="space-y-8 pt-6 border-t border-slate-50">
                 <h3 className="text-[10px] uppercase font-black tracking-super-wide text-slate-400 border-b border-slate-50 pb-2">Client Services</h3>
-                <ul className="space-y-4 text-[10px] uppercase font-bold tracking-widest text-[#2C3468]/60">
-                  <li><a href="#">About ISA Atelier</a></li>
-                  <li><a href="#">Store Locator</a></li>
-                  <li><a href="#">Care Guide</a></li>
-                  <li><a href="#">Contact Concierge</a></li>
+                <ul className="space-y-6 text-[11px] uppercase font-bold tracking-widest text-[#2C3468]/60">
+                  <li><button onClick={() => handleQuickLink('#/')} className="block w-full text-left">About ISA Atelier</button></li>
+                  <li><button onClick={() => setIsMenuOpen(false)} className="block w-full text-left">Store Locator</button></li>
+                  <li><button onClick={() => setIsMenuOpen(false)} className="block w-full text-left">Care Guide</button></li>
+                  <li><button onClick={() => setIsMenuOpen(false)} className="block w-full text-left">Contact Concierge</button></li>
                 </ul>
               </div>
             </nav>

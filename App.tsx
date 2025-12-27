@@ -171,7 +171,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col ${isCartOpen ? 'cart-drawer-open' : ''}`}>
+    <div className={`min-h-screen flex flex-col`}>
       <Header 
         onCartClick={() => setIsCartOpen(true)} 
         cartCount={cartItems.reduce((acc, item) => acc + item.quantity, 0)} 
@@ -181,7 +181,7 @@ const App: React.FC = () => {
         activeCategory={activeCategory}
         setActiveCategory={setActiveCategory}
       />
-      <main className="flex-1 pt-[80px] md:pt-44">
+      <main className="flex-1 pt-[72px] md:pt-44">
         {fetchError ? (
           <div className="max-w-xl mx-auto mt-20 p-8 text-center animate-fadeIn">
             <h3 className="text-xl font-serif italic text-slate-800 mb-2">Service Offline</h3>
@@ -191,6 +191,7 @@ const App: React.FC = () => {
         ) : isLoading && products.length === 0 ? (
           <div className="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center">
             <div className="w-12 h-12 border-t-2 border-[#2C3468] rounded-full animate-spin"></div>
+            <p className="mt-4 text-[10px] uppercase tracking-super-wide text-slate-400 animate-pulse">Entering Atelier</p>
           </div>
         ) : (
           <div key={currentRoute} className="animate-fadeIn">
