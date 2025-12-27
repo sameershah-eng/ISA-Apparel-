@@ -40,15 +40,15 @@ const Header: React.FC<HeaderProps> = ({
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      setIsScrolled(window.scrollY > 15);
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
+      setTimeout(() => searchInputRef.current?.focus(), 100);
     }
   }, [isSearchOpen]);
 
@@ -67,7 +67,7 @@ const Header: React.FC<HeaderProps> = ({
 
   const handleSearchToggle = () => {
     setIsSearchOpen(!isSearchOpen);
-    setIsMenuOpen(false); 
+    if (isMenuOpen) setIsMenuOpen(false);
   };
 
   const handleQuickLink = (path: string) => {
@@ -78,12 +78,11 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      <header className={`fixed top-0 left-0 w-full z-[70] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${isScrolled || isSearchOpen || isMenuOpen ? 'bg-white/40 backdrop-blur-2xl shadow-sm py-2 md:py-4' : 'bg-transparent py-4 md:py-8'}`}>
-        <div className="max-w-7xl mx-auto px-4 md:px-12 flex items-center relative">
+      <header className={`fixed top-0 left-0 w-full z-[70] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${isScrolled || isSearchOpen || isMenuOpen ? 'bg-white/40 backdrop-blur-2xl py-2 md:py-4 border-b border-black/5' : 'bg-transparent py-4 md:py-8'}`}>
+        <div className="max-w-7xl mx-auto px-4 md:px-12 flex items-center relative h-10 md:h-12">
           
-          {/* LEFT: Nav Links (Hidden on mobile menu trigger) */}
+          {/* LEFT: Nav Links */}
           <div className="flex-1 flex items-center justify-start">
-             {/* Mobile Menu Trigger */}
              <button 
                 onClick={() => setIsMenuOpen(true)}
                 className="md:hidden p-2 text-[#2C3468] active:scale-90 transition-transform -ml-2"
@@ -94,18 +93,17 @@ const Header: React.FC<HeaderProps> = ({
                 </svg>
               </button>
 
-              {/* Desktop Left Nav */}
               <nav className="hidden md:flex items-center space-x-12">
-                <a href="#/shop" className="text-[10px] font-black uppercase tracking-[0.3em] text-[#2C3468] hover:opacity-50 transition-all duration-500">Shop</a>
-                <a href="#/tailoring" className="text-[10px] font-black uppercase tracking-[0.3em] text-[#2C3468] hover:opacity-50 transition-all duration-500">Tailoring</a>
+                <button onClick={() => handleQuickLink('#/shop')} className="text-[10px] font-black uppercase tracking-[0.3em] text-[#2C3468] hover:opacity-50 transition-all">Shop</button>
+                <button onClick={() => handleQuickLink('#/tailoring')} className="text-[10px] font-black uppercase tracking-[0.3em] text-[#2C3468] hover:opacity-50 transition-all">Tailoring</button>
               </nav>
           </div>
 
-          {/* CENTER: Logo (Centered on all screens) */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center z-10">
-            <a href="#/" onClick={() => handleQuickLink('#/')} className={`transition-all duration-700 hover:scale-105 ${isScrolled ? 'scale-[0.5] md:scale-80' : 'scale-[0.55] md:scale-100'}`}>
+          {/* CENTER: Logo (Rigidly Centered) */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[80]">
+            <button onClick={() => handleQuickLink('#/')} className={`transition-all duration-700 hover:scale-105 block ${isScrolled ? 'scale-[0.45] md:scale-75' : 'scale-[0.5] md:scale-90'}`}>
               <Logo />
-            </a>
+            </button>
           </div>
 
           {/* RIGHT: Utility */}
@@ -123,7 +121,7 @@ const Header: React.FC<HeaderProps> = ({
               </button>
               <button 
                 onClick={handleSearchToggle}
-                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#2C3468] hover:opacity-50 transition-all duration-500"
+                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#2C3468] hover:opacity-50 transition-all"
               >
                 <svg className="w-4 h-4 md:w-3.5 md:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 <span className="hidden md:inline">Search</span>
@@ -132,55 +130,53 @@ const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Cinematic Search Overlay */}
-        <div className={`absolute top-full right-0 w-full md:w-[65vw] bg-white/95 backdrop-blur-2xl shadow-2xl transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-y-auto ${isSearchOpen ? 'h-[calc(100dvh-54px)] md:max-h-[85vh] border-t border-slate-50 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}>
+        {/* Search Overlay */}
+        <div className={`absolute top-full right-0 w-full md:w-[65vw] bg-white shadow-2xl transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-y-auto ${isSearchOpen ? 'h-[calc(100dvh-54px)] md:max-h-[85vh] border-t opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}>
           <div className="max-w-4xl mx-auto px-6 lg:px-12 py-10 md:py-20">
-            <div className="flex flex-col space-y-16">
-              <div className="space-y-6">
+            <div className="flex flex-col space-y-12">
+              <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                   <h3 className="text-[8px] md:text-[9px] uppercase font-black tracking-super-wide text-slate-300">Catalog Retrieval</h3>
+                   <h3 className="text-[8px] uppercase font-black tracking-super-wide text-slate-300">Catalog retrieval</h3>
                    <button onClick={() => setIsSearchOpen(false)} className="text-[8px] uppercase font-bold text-slate-400 md:hidden">Close</button>
                 </div>
-                <div className="relative border-b border-[#2C3468]/30 pb-4">
+                <div className="relative border-b border-[#2C3468]/20 pb-2">
                   <input 
                     ref={searchInputRef}
                     type="text" 
                     placeholder="Keywords..."
-                    className="w-full bg-transparent text-xl md:text-4xl font-serif italic text-[#2C3468] focus:outline-none placeholder:opacity-10 py-2"
+                    className="w-full bg-transparent text-xl md:text-3xl font-serif italic text-[#2C3468] focus:outline-none placeholder:opacity-10 py-2"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4">
                   <h3 className="text-[8px] uppercase font-black tracking-super-wide text-slate-300">Collections</h3>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-wrap gap-2">
                     {categories.map(cat => (
                       <button 
                         key={cat} 
                         onClick={() => {
                           setActiveCategory(cat);
-                          if (window.location.hash !== '#/shop') handleQuickLink('#/shop');
+                          handleQuickLink('#/shop');
                         }}
-                        className={`px-4 py-2 text-[8px] md:text-[9px] font-black uppercase tracking-widest border transition-all duration-500 ${activeCategory === cat ? 'bg-[#2C3468] text-white border-[#2C3468] shadow-lg' : 'border-slate-100 text-slate-400 hover:border-[#2C3468] hover:text-[#2C3468]'}`}
+                        className={`px-3 py-2 text-[8px] md:text-[9px] font-black uppercase tracking-widest border transition-all ${activeCategory === cat ? 'bg-[#2C3468] text-white border-[#2C3468]' : 'border-slate-100 text-slate-400 hover:text-[#2C3468]'}`}
                       >
                         {cat}
                       </button>
                     ))}
                   </div>
                 </div>
-                <div className="space-y-8">
-                  <h3 className="text-[8px] uppercase font-black tracking-super-wide text-slate-300">Archive Hits</h3>
-                  <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-6">
+                  <h3 className="text-[8px] uppercase font-black tracking-super-wide text-slate-300">Quick Hits</h3>
+                  <div className="grid grid-cols-2 gap-4">
                     {quickResults.map(p => (
-                      <button key={p.id} onClick={() => handleQuickLink(`#/product/${p.slug}`)} className="group text-left space-y-3">
+                      <button key={p.id} onClick={() => handleQuickLink(`#/product/${p.slug}`)} className="group text-left space-y-2">
                         <div className="aspect-[3/4] bg-slate-50 overflow-hidden rounded-sm relative shadow-sm">
                           <img src={p.images[0]} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" alt={p.title} />
                         </div>
-                        <div className="min-w-0">
-                          <h4 className="text-[8px] font-bold text-slate-900 uppercase truncate leading-tight tracking-widest">{p.title}</h4>
-                        </div>
+                        <h4 className="text-[8px] font-bold text-slate-900 uppercase truncate tracking-widest leading-tight">{p.title}</h4>
                       </button>
                     ))}
                   </div>
@@ -191,34 +187,35 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       </header>
 
-      {/* Mobile Drawer - REDUCED TEXT SIZE FOR PREMIUM LOOK */}
+      {/* Mobile Drawer (SMALL TEXT) */}
       <div className={`fixed inset-0 z-[100] transition-opacity duration-700 ${isMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)} />
         <div className={`absolute top-0 left-0 w-[85%] max-w-sm h-full bg-white shadow-2xl transition-transform duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="flex flex-col h-full">
             <div className="p-6 flex justify-between items-center bg-white border-b border-slate-50">
               <Logo className="scale-[0.4] origin-left" />
-              <button onClick={() => setIsMenuOpen(false)} className="p-2 text-[#2C3468] active:scale-75 transition-transform">
+              <button onClick={() => setIsMenuOpen(false)} className="p-2 text-[#2C3468]">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
             </div>
-            <nav className="flex-1 overflow-y-auto p-10 space-y-12">
-              <div className="space-y-10">
-                <h3 className="text-[8px] uppercase font-black tracking-super-wide text-slate-300">Archive Navigation</h3>
-                <ul className="space-y-8">
-                  <li><button onClick={() => handleQuickLink('#/')} className="text-[12px] uppercase font-black tracking-[0.2em] text-[#2C3468] block w-full text-left">The Atelier</button></li>
-                  <li><button onClick={() => handleQuickLink('#/shop')} className="text-[12px] uppercase font-black tracking-[0.2em] text-[#2C3468] block w-full text-left">Collections</button></li>
-                  <li><button onClick={() => handleQuickLink('#/fabrics')} className="text-[12px] uppercase font-black tracking-[0.2em] text-[#2C3468] block w-full text-left">The Fabrics</button></li>
-                  <li><button onClick={() => handleQuickLink('#/tailoring')} className="text-[12px] uppercase font-black tracking-[0.2em] text-[#2C3468] block w-full text-left">Tailoring</button></li>
+            <nav className="flex-1 overflow-y-auto p-8 space-y-12">
+              <div className="space-y-8">
+                <h3 className="text-[8px] uppercase font-black tracking-super-wide text-slate-300">ARCHIVE</h3>
+                <ul className="space-y-6">
+                  <li><button onClick={() => handleQuickLink('#/')} className="text-[11px] uppercase font-black tracking-[0.25em] text-[#2C3468] block w-full text-left">The Atelier</button></li>
+                  <li><button onClick={() => handleQuickLink('#/shop')} className="text-[11px] uppercase font-black tracking-[0.25em] text-[#2C3468] block w-full text-left">Collections</button></li>
+                  <li><button onClick={() => handleQuickLink('#/fabrics')} className="text-[11px] uppercase font-black tracking-[0.25em] text-[#2C3468] block w-full text-left">The Fabrics</button></li>
+                  <li><button onClick={() => handleQuickLink('#/tailoring')} className="text-[11px] uppercase font-black tracking-[0.25em] text-[#2C3468] block w-full text-left">Tailoring</button></li>
+                  <li><button onClick={() => handleQuickLink('#/accessories')} className="text-[11px] uppercase font-black tracking-[0.25em] text-[#2C3468] block w-full text-left">Accessories</button></li>
                 </ul>
               </div>
 
-              <div className="pt-12 border-t border-slate-50 space-y-8">
-                <h3 className="text-[8px] uppercase font-black tracking-super-wide text-slate-300">Client Services</h3>
-                <ul className="space-y-6 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
-                  <li><a href="#" className="hover:text-[#2C3468] transition-colors">Our Story</a></li>
-                  <li><a href="#" className="hover:text-[#2C3468] transition-colors">Track Shipment</a></li>
-                  <li><a href="#" className="hover:text-[#2C3468] transition-colors">Returns</a></li>
+              <div className="pt-8 border-t border-slate-50 space-y-6">
+                <h3 className="text-[8px] uppercase font-black tracking-super-wide text-slate-300">Support</h3>
+                <ul className="space-y-4 text-[9px] font-bold tracking-widest text-slate-400 uppercase">
+                  <li><button onClick={() => setIsMenuOpen(false)} className="hover:text-[#2C3468] transition-colors">Our Story</button></li>
+                  <li><button onClick={() => setIsMenuOpen(false)} className="hover:text-[#2C3468] transition-colors">Track Shipment</button></li>
+                  <li><button onClick={() => setIsMenuOpen(false)} className="hover:text-[#2C3468] transition-colors">Returns & Boutique</button></li>
                 </ul>
               </div>
             </nav>
@@ -227,10 +224,7 @@ const Header: React.FC<HeaderProps> = ({
       </div>
 
       {isSearchOpen && (
-        <div 
-          className="fixed inset-0 bg-black/5 backdrop-blur-[2px] z-[50] transition-opacity duration-700"
-          onClick={() => setIsSearchOpen(false)}
-        />
+        <div className="fixed inset-0 bg-black/5 backdrop-blur-[2px] z-[50]" onClick={() => setIsSearchOpen(false)} />
       )}
     </>
   );

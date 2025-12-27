@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
@@ -17,10 +17,19 @@ import { supabase } from './lib/supabaseClient';
 const App: React.FC = () => {
   const [currentRoute, setCurrentRoute] = useState(window.location.hash || '#/');
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Persistence: Initialize cart from localStorage
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('isa-cart-v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
 
   const [lastAddedItem, setLastAddedItem] = useState<CartItem | null>(null);
   const [showNotification, setShowNotification] = useState(false);
@@ -28,33 +37,33 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
 
-  // Intersection Observer for Scroll Reveals
+  // Save cart to localStorage whenever it changes
   useEffect(() => {
-    const observerOptions = {
-      threshold: 0.1,
-      rootMargin: "0px 0px -50px 0px"
-    };
+    localStorage.setItem('isa-cart-v1', JSON.stringify(cartItems));
+  }, [cartItems]);
 
+  // Global Scroll Reveal System
+  useEffect(() => {
+    const observerOptions = { threshold: 0.1, rootMargin: "0px 0px -50px 0px" };
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('active');
+          observer.unobserve(entry.target); // Performance: stop observing once revealed
         }
       });
     }, observerOptions);
 
     const elements = document.querySelectorAll('.reveal');
     elements.forEach(el => observer.observe(el));
-
     return () => observer.disconnect();
   }, [currentRoute, products]);
 
+  // Database Fetching - Optimized for speed
   useEffect(() => {
     const fetchCatalog = async () => {
       try {
         setIsLoading(true);
-        setFetchError(null);
-
         const { data: dbProducts, error } = await supabase
           .from('products')
           .select(`
@@ -70,19 +79,15 @@ const App: React.FC = () => {
         const transformed: Product[] = (dbProducts || []).map(p => {
           let categoryName = 'Uncategorized';
           if (p.categories) {
-            categoryName = Array.isArray(p.categories) 
-              ? (p.categories[0]?.name || 'Uncategorized') 
-              : (p.categories.name || 'Uncategorized');
+            categoryName = Array.isArray(p.categories) ? p.categories[0]?.name : p.categories.name;
           }
-          
-          const generatedSlug = p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + p.id.slice(0, 5);
-          const slug = p.slug || generatedSlug;
+          const slug = p.slug || (p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + p.id.slice(0, 5));
           
           return {
             id: p.id,
-            slug: slug,
+            slug,
             title: p.title || 'Untitled Article',
-            category: categoryName,
+            category: categoryName || 'Uncategorized',
             price: p.price ? parseFloat(p.price.toString()) : 0,
             description: p.description || '',
             longDescription: p.long_description || '',
@@ -106,28 +111,26 @@ const App: React.FC = () => {
 
         setProducts(transformed);
       } catch (err: any) {
-        console.error('Fetch error:', err);
-        setFetchError(err.message || 'Failed to connect to database.');
+        setFetchError(err.message || 'Service temporarily unavailable.');
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchCatalog();
   }, []);
 
+  // Hash Routing
   useEffect(() => {
     const handleHashChange = () => {
       const newHash = window.location.hash || '#/';
       setCurrentRoute(newHash);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: 'instant' });
     };
     window.addEventListener('hashchange', handleHashChange);
-    handleHashChange();
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  const addToCart = (newItemData: Omit<CartItem, 'id'>) => {
+  const addToCart = useCallback((newItemData: Omit<CartItem, 'id'>) => {
     setCartItems(prevItems => {
       const existingIndex = prevItems.findIndex(item => 
         item.productId === newItemData.productId && 
@@ -135,42 +138,36 @@ const App: React.FC = () => {
         item.color === newItemData.color
       );
 
-      let finalItems;
-      let addedItem: CartItem;
-
       if (existingIndex > -1) {
-        finalItems = prevItems.map((item, idx) => 
-          idx === existingIndex ? { ...item, quantity: item.quantity + 1 } : item
-        );
-        addedItem = finalItems[existingIndex];
+        const updated = [...prevItems];
+        updated[existingIndex] = { ...updated[existingIndex], quantity: updated[existingIndex].quantity + 1 };
+        setLastAddedItem(updated[existingIndex]);
+        return updated;
       } else {
-        addedItem = { ...newItemData, id: Math.random().toString(36).substr(2, 9) };
-        finalItems = [...prevItems, addedItem];
+        const newItem = { ...newItemData, id: Math.random().toString(36).substr(2, 9) };
+        setLastAddedItem(newItem);
+        return [...prevItems, newItem];
       }
-
-      setLastAddedItem(addedItem);
-      setShowNotification(true);
-      setTimeout(() => setShowNotification(false), 3000);
-
-      return finalItems;
     });
-  };
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 3000);
+  }, []);
 
-  const updateQuantity = (id: string, delta: number) => {
+  const updateQuantity = useCallback((id: string, delta: number) => {
     setCartItems(prev => prev.map(item => 
       item.id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item
     ));
-  };
+  }, []);
 
-  const removeItem = (id: string) => {
+  const removeItem = useCallback((id: string) => {
     setCartItems(prev => prev.filter(item => item.id !== id));
-  };
+  }, []);
 
   const renderView = () => {
     const path = currentRoute.split('?')[0]; 
     if (isLoading && products.length === 0) return (
-      <div className="h-[60vh] flex items-center justify-center">
-        <div className="w-8 h-8 border-t-2 border-[#2C3468] rounded-full animate-spin"></div>
+      <div className="h-[70vh] flex items-center justify-center">
+        <div className="w-6 h-6 border-t-2 border-[#2C3468] rounded-full animate-spin"></div>
       </div>
     );
 
@@ -179,15 +176,7 @@ const App: React.FC = () => {
       case '':
         return <Home products={products} />;
       case '#/shop':
-        return (
-          <Shop 
-            products={products} 
-            externalSearch={searchQuery} 
-            onSearchChange={setSearchQuery}
-            externalCategory={activeCategory}
-            onCategoryChange={setActiveCategory}
-          />
-        );
+        return <Shop products={products} externalSearch={searchQuery} onSearchChange={setSearchQuery} externalCategory={activeCategory} onCategoryChange={setActiveCategory} />;
       case '#/fabrics':
         return <Fabrics products={products} />;
       case '#/tailoring':
@@ -206,7 +195,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col selection:bg-[#2C3468] selection:text-white overflow-x-hidden">
+    <div className="min-h-screen flex flex-col selection:bg-[#2C3468] selection:text-white overflow-x-hidden bg-white">
       <Header 
         onCartClick={() => setIsCartOpen(true)} 
         cartCount={cartItems.reduce((acc, item) => acc + item.quantity, 0)} 
@@ -218,45 +207,35 @@ const App: React.FC = () => {
         isAddingToCart={showNotification}
       />
       
-      <main className="flex-1 pt-[54px] md:pt-44">
+      <main className="flex-1 pt-[60px] md:pt-[100px]">
         {fetchError ? (
           <div className="max-w-xl mx-auto mt-20 p-8 text-center">
-            <h3 className="text-xl font-serif italic text-slate-800 mb-2">Service Offline</h3>
-            <p className="text-slate-500 text-sm mb-8 font-light">{fetchError}</p>
-            <button onClick={() => window.location.reload()} className="px-8 py-3 bg-[#2C3468] text-white text-[10px] uppercase font-bold tracking-widest shadow-xl">Retry</button>
+            <h3 className="text-xl font-serif italic text-slate-800 mb-2">Network Archive Offline</h3>
+            <p className="text-slate-500 text-[10px] uppercase tracking-widest mb-8">{fetchError}</p>
+            <button onClick={() => window.location.reload()} className="px-8 py-3 bg-[#2C3468] text-white text-[10px] uppercase font-bold tracking-widest">Retry Connection</button>
           </div>
         ) : (
-          <div key={currentRoute}>
+          <div className="animate-fadeIn">
             {renderView()}
           </div>
         )}
       </main>
 
-      {/* Floating Success Notification */}
       <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:top-24 md:bottom-auto md:right-8 z-[110] w-[92%] md:w-80 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${showNotification ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
         <div className="bg-[#2C3468] text-white p-3 md:p-4 shadow-2xl rounded-sm flex gap-4 items-center backdrop-blur-lg">
-          <div className="w-10 h-14 md:w-12 md:h-16 bg-white/10 flex-shrink-0">
-             <img src={lastAddedItem?.image} className="w-full h-full object-cover rounded-sm" alt="" />
+          <div className="w-10 h-14 bg-white/10 flex-shrink-0">
+             <img src={lastAddedItem?.image} className="w-full h-full object-cover" alt="" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[7px] md:text-[8px] uppercase tracking-widest font-black opacity-60 mb-0.5">Article Secured</p>
-            <h4 className="text-[9px] md:text-[10px] font-bold uppercase truncate pr-4">{lastAddedItem?.title}</h4>
-            <button onClick={() => { setIsCartOpen(true); setShowNotification(false); }} className="text-[8px] md:text-[9px] uppercase tracking-widest font-bold border-b border-white/20 hover:border-white mt-1.5 transition-all inline-block">View Bag</button>
+            <p className="text-[7px] uppercase tracking-widest font-black opacity-60">Article Secured</p>
+            <h4 className="text-[9px] font-bold uppercase truncate">{lastAddedItem?.title}</h4>
+            <button onClick={() => { setIsCartOpen(true); setShowNotification(false); }} className="text-[8px] uppercase tracking-widest font-bold border-b border-white/20 hover:border-white mt-1.5 inline-block">View Bag</button>
           </div>
-          <button onClick={() => setShowNotification(false)} className="p-1 md:p-2 opacity-40 hover:opacity-100 transition-opacity absolute top-1 right-1">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
-          </button>
         </div>
       </div>
 
       <Footer />
-      <CartDrawer 
-        isOpen={isCartOpen} 
-        onClose={() => setIsCartOpen(false)} 
-        items={cartItems}
-        onUpdateQuantity={updateQuantity}
-        onRemove={removeItem}
-      />
+      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} items={cartItems} onUpdateQuantity={updateQuantity} onRemove={removeItem} />
       <ChatBot />
     </div>
   );
