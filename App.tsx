@@ -56,8 +56,9 @@ const App: React.FC = () => {
               : (p.categories.name || 'Uncategorized');
           }
           
-          // Ensure a slug exists even if missing in DB
-          const slug = p.slug || p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + p.id.slice(0, 4);
+          // CRITICAL: Stable slug generation ensures URL matches lookup
+          const generatedSlug = p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + p.id.slice(0, 5);
+          const slug = p.slug || generatedSlug;
           
           return {
             id: p.id,
@@ -67,26 +68,27 @@ const App: React.FC = () => {
             price: p.price ? parseFloat(p.price.toString()) : 0,
             description: p.description || '',
             longDescription: p.long_description || '',
-            images: Array.isArray(p.product_images)
+            images: Array.isArray(p.product_images) && p.product_images.length > 0
               ? p.product_images.sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)).map((img: any) => img.url)
-              : [],
+              : ['https://images.unsplash.com/photo-1594932224030-9455144cced3?auto=format&fit=crop&w=800&q=80'],
             sizes: Array.isArray(p.product_variants)
               ? Array.from(new Set(p.product_variants.map((v: any) => v.size))).filter(Boolean) as string[]
-              : [],
+              : ['32', '34', '36'],
             colors: Array.isArray(p.product_variants)
               ? p.product_variants.reduce((acc: any[], v: any) => {
                   if (v.color_name && !acc.find(c => c.name === v.color_name)) {
-                    acc.push({ name: v.color_name, hex: v.color_hex });
+                    acc.push({ name: v.color_name, hex: v.color_hex || '#2C3468' });
                   }
                   return acc;
                 }, [])
-              : [],
+              : [{ name: 'Midnight', hex: '#2C3468' }],
             stock: p.stock || 0
           };
         });
 
         setProducts(transformed);
       } catch (err: any) {
+        console.error('Fetch error:', err);
         setFetchError(err.message || 'Failed to connect to database.');
       } finally {
         setIsLoading(false);
@@ -100,7 +102,7 @@ const App: React.FC = () => {
     const handleHashChange = () => {
       const newHash = window.location.hash || '#/';
       setCurrentRoute(newHash);
-      window.scrollTo({ top: 0, behavior: 'instant' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     };
     window.addEventListener('hashchange', handleHashChange);
     handleHashChange();
@@ -127,7 +129,6 @@ const App: React.FC = () => {
       setCartItems([...cartItems, newItem]);
     }
 
-    // Trigger feedback notification
     setLastAddedItem(finalItem);
     setShowNotification(true);
     setTimeout(() => setShowNotification(false), 3500);
@@ -145,7 +146,11 @@ const App: React.FC = () => {
 
   const renderView = () => {
     const path = currentRoute.split('?')[0]; 
-    if (isLoading && products.length === 0) return <div className="h-screen bg-white" />;
+    if (isLoading && products.length === 0) return (
+      <div className="h-[60vh] flex items-center justify-center">
+        <div className="w-10 h-10 border-t-2 border-[#2C3468] rounded-full animate-spin"></div>
+      </div>
+    );
 
     switch (path) {
       case '#/':
@@ -193,36 +198,31 @@ const App: React.FC = () => {
       
       <main className="flex-1 pt-[64px] md:pt-44">
         {fetchError ? (
-          <div className="max-w-xl mx-auto mt-20 p-8 text-center animate-fadeIn">
+          <div className="max-w-xl mx-auto mt-20 p-8 text-center">
             <h3 className="text-xl font-serif italic text-slate-800 mb-2">Service Offline</h3>
             <p className="text-slate-500 text-sm mb-8 font-light">{fetchError}</p>
             <button onClick={() => window.location.reload()} className="px-8 py-3 bg-[#2C3468] text-white text-[10px] uppercase font-bold tracking-widest shadow-xl">Retry</button>
           </div>
-        ) : isLoading && products.length === 0 ? (
-          <div className="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center">
-            <div className="w-10 h-10 border-t-2 border-[#2C3468] rounded-full animate-spin mb-4"></div>
-            <p className="text-[10px] uppercase tracking-super-wide text-slate-400 animate-pulse">Entering Atelier</p>
-          </div>
         ) : (
-          <div key={currentRoute} className="animate-fadeIn">
+          <div key={currentRoute}>
             {renderView()}
           </div>
         )}
       </main>
 
-      {/* Floating Success Notification (Mobile Friendly) */}
-      <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:top-24 md:bottom-auto md:right-8 z-[110] w-[90%] md:w-80 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${showNotification ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
-        <div className="bg-[#2C3468] text-white p-4 shadow-2xl rounded-sm flex gap-4 items-center backdrop-blur-md">
-          <div className="w-10 h-14 bg-white/10 flex-shrink-0">
+      {/* Floating Success Notification */}
+      <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:top-24 md:bottom-auto md:right-8 z-[110] w-[92%] md:w-80 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${showNotification ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
+        <div className="bg-[#2C3468] text-white p-4 shadow-2xl rounded-sm flex gap-4 items-center backdrop-blur-lg">
+          <div className="w-12 h-16 bg-white/10 flex-shrink-0">
              <img src={lastAddedItem?.image} className="w-full h-full object-cover rounded-sm" alt="" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[8px] uppercase tracking-widest font-black opacity-60 mb-0.5">Article Secured</p>
+            <p className="text-[8px] uppercase tracking-widest font-black opacity-60 mb-1">Article Secured</p>
             <h4 className="text-[10px] font-bold uppercase truncate pr-4">{lastAddedItem?.title}</h4>
-            <button onClick={() => { setIsCartOpen(true); setShowNotification(false); }} className="text-[9px] uppercase tracking-widest font-bold border-b border-white/20 hover:border-white mt-1.5 transition-all inline-block">View Bag</button>
+            <button onClick={() => { setIsCartOpen(true); setShowNotification(false); }} className="text-[9px] uppercase tracking-widest font-bold border-b border-white/20 hover:border-white mt-2 transition-all inline-block">View Bag</button>
           </div>
-          <button onClick={() => setShowNotification(false)} className="p-1.5 opacity-40 hover:opacity-100 transition-opacity absolute top-2 right-2">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+          <button onClick={() => setShowNotification(false)} className="p-2 opacity-40 hover:opacity-100 transition-opacity absolute top-1 right-1">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
       </div>
