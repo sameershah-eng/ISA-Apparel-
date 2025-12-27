@@ -32,7 +32,8 @@
             transform: translateY(10px);
             transition: opacity 0.6s ease-out, transform 0.6s ease-out;
             will-change: opacity, transform;
-            /* REMOVED: pointer-events: none; - This was blocking clicks on mobile */
+            /* CRITICAL FIX: Ensure elements are always interactable */
+            pointer-events: auto !important;
         }
         .reveal.active {
             opacity: 1;
