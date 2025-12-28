@@ -62,7 +62,7 @@ const Home: React.FC<HomeProps> = ({ products }) => {
                 href="#/shop"
                 className="inline-block border border-white/30 backdrop-blur-sm px-10 md:px-16 py-4 md:py-5 text-[9px] md:text-[10px] font-black uppercase tracking-[0.4em] hover:bg-white hover:text-black transition-all duration-700 transform hover:-translate-y-2 shadow-2xl"
               >
-                Inscribe Order
+                Order
               </a>
             </div>
           </div>
