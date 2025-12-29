@@ -1,17 +1,19 @@
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import { GoogleGenAI } from "@google/genai";
 
 interface ChatMessage {
-  role: 'user' | 'model';
+  role: "user" | "model";
   text: string;
 }
 
 const ChatBot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [history, setHistory] = useState<ChatMessage[]>([
-    { role: 'model', text: 'Welcome to ISA. How can we assist you with your premium trousers today?' }
+    {
+      role: "model",
+      text: "Welcome to ISA. How can we assist you with your premium trousers today?",
+    },
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -27,26 +29,30 @@ const ChatBot: React.FC = () => {
     if (!message.trim() || isLoading) return;
 
     const userText = message.trim();
-    setMessage('');
-    setHistory(prev => [...prev, { role: 'user', text: userText }]);
+    setMessage("");
+    setHistory((prev) => [...prev, { role: "user", text: userText }]);
     setIsLoading(true);
 
     try {
       // 1. Initialize API Client
-      const ai = new GoogleGenAI({ apiKey: 'API' });
+      const ai = new GoogleGenAI({
+        apiKey: import.meta.env.VITE_GEMINI_API_KEY,
+      });
 
       // 2. Format history for the API
-      const contents = history.map(m => ({
-        role: m.role,
-        parts: [{ text: m.text }]
-      })).concat({ role: 'user', parts: [{ text: userText }] });
+      const contents = history
+        .map((m) => ({
+          role: m.role,
+          parts: [{ text: m.text }],
+        }))
+        .concat({ role: "user", parts: [{ text: userText }] });
 
       // 3. Generate Content with System Instructions
       // const response = await ai.models.generateContent({
       //   model: 'gemini-3-flash-preview',
       //   contents: contents,
       //   config: {
-      //     systemInstruction: `You are ISA Concierge, the digital ambassador for ISA Atelier. 
+      //     systemInstruction: `You are ISA Concierge, the digital ambassador for ISA Atelier.
       //     ISA Atelier is a luxury fashion house specializing in premium trousers.
 
       //     CORE BRAND DATA:
@@ -62,7 +68,7 @@ const ChatBot: React.FC = () => {
       // });
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: "gemini-3-flash-preview",
         contents: contents,
         config: {
           systemInstruction: `
@@ -104,39 +110,58 @@ Assistant: "Our [Ready-to-Wear](https://isa-apparel.vercel.app/#/ready-to-wear) 
       });
 
       // 4. Extract text property correctly
-      const botText = response.text || "I apologize, our concierge service is briefly unavailable.";
-      setHistory(prev => [...prev, { role: 'model', text: botText }]);
-
-
+      const botText =
+        response.text ||
+        "I apologize, our concierge service is briefly unavailable.";
+      setHistory((prev) => [...prev, { role: "model", text: botText }]);
     } catch (error) {
-      console.error('Chat Error:', error);
-      setHistory(prev => [...prev, { role: 'model', text: "I'm having some technical difficulties. Please try again later or contact our support team via WhatsApp." }]);
+      console.error("Chat Error:", error);
+      setHistory((prev) => [
+        ...prev,
+        {
+          role: "model",
+          text: "I'm having some technical difficulties. Please try again later or contact our support team via WhatsApp.",
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleSend();
+    if (e.key === "Enter") handleSend();
   };
 
   return (
     <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-[100] flex flex-col items-end">
       {/* Chat Window */}
-      <div className={`mb-4 w-[85vw] sm:w-80 bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] rounded-2xl border border-slate-100 overflow-hidden transition-all duration-500 origin-bottom-right ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-0 opacity-0 translate-y-10 pointer-events-none'}`}>
+      <div
+        className={`mb-4 w-[85vw] sm:w-80 bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] rounded-2xl border border-slate-100 overflow-hidden transition-all duration-500 origin-bottom-right ${
+          isOpen
+            ? "scale-100 opacity-100 translate-y-0"
+            : "scale-0 opacity-0 translate-y-10 pointer-events-none"
+        }`}
+      >
         {/* Header */}
         <div className="bg-[#2C3468] p-5 md:p-6 text-white">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em]">ISA Concierge</h3>
-              <p className="text-[9px] opacity-60 mt-0.5">Sartorial Assistance Active</p>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em]">
+                ISA Concierge
+              </h3>
+              <p className="text-[9px] opacity-60 mt-0.5">
+                Sartorial Assistance Active
+              </p>
             </div>
             <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.8)]"></div>
           </div>
         </div>
 
         {/* Content */}
-        <div ref={scrollRef} className="h-80 md:h-96 p-5 bg-slate-50/50 overflow-y-auto flex flex-col gap-4 no-scrollbar">
+        <div
+          ref={scrollRef}
+          className="h-80 md:h-96 p-5 bg-slate-50/50 overflow-y-auto flex flex-col gap-4 no-scrollbar"
+        >
           {history.map((m, i) => (
             // <div
             //   key={i}
@@ -149,10 +174,11 @@ Assistant: "Our [Ready-to-Wear](https://isa-apparel.vercel.app/#/ready-to-wear) 
             // </div>
             <div
               key={i}
-              className={`p-3.5 rounded-2xl shadow-sm max-w-[90%] text-[11px] leading-relaxed border whitespace-pre-wrap ${m.role === 'user'
-                  ? 'bg-[#2C3468] text-white self-end rounded-tr-none border-[#2C3468]'
-                  : 'bg-white text-slate-700 self-start rounded-tl-none border-slate-100'
-                }`}
+              className={`p-3.5 rounded-2xl shadow-sm max-w-[90%] text-[11px] leading-relaxed border whitespace-pre-wrap ${
+                m.role === "user"
+                  ? "bg-[#2C3468] text-white self-end rounded-tr-none border-[#2C3468]"
+                  : "bg-white text-slate-700 self-start rounded-tl-none border-slate-100"
+              }`}
             >
               {m.text}
             </div>
@@ -180,10 +206,24 @@ Assistant: "Our [Ready-to-Wear](https://isa-apparel.vercel.app/#/ready-to-wear) 
           <button
             onClick={handleSend}
             disabled={isLoading || !message.trim()}
-            className={`p-2 transition-all ${isLoading || !message.trim() ? 'text-slate-200' : 'text-[#2C3468] hover:scale-110'}`}
+            className={`p-2 transition-all ${
+              isLoading || !message.trim()
+                ? "text-slate-200"
+                : "text-[#2C3468] hover:scale-110"
+            }`}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2.5"
+                d="M14 5l7 7m0 0l-7 7m7-7H3"
+              />
             </svg>
           </button>
         </div>
@@ -193,17 +233,41 @@ Assistant: "Our [Ready-to-Wear](https://isa-apparel.vercel.app/#/ready-to-wear) 
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`w-14 h-14 md:w-16 md:h-16 rounded-full shadow-2xl flex items-center justify-center transition-all duration-500 active:scale-90 group
-          ${isOpen ? 'bg-white text-[#2C3468] rotate-90' : 'bg-[#2C3468] text-white'}
+          ${
+            isOpen
+              ? "bg-white text-[#2C3468] rotate-90"
+              : "bg-[#2C3468] text-white"
+          }
         `}
       >
         {isOpen ? (
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         ) : (
           <div className="relative">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.5"
+                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+              />
             </svg>
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#2C3468]"></span>
           </div>
